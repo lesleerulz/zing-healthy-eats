@@ -55,7 +55,7 @@ This is my first fully coded e-commerce project. While it is not production-read
     - Run the following command:
 
 ```
-git clone https://github.com/fchavonet/web-flask_shop_template.git
+[git clone https://github.com/lesleerulz/zing-healthy-eats
 ```
 
 2. Open the cloned repository.
@@ -161,4 +161,5 @@ This demo allows you to test a pre-configured environment and should give a resu
 
 **Fabien CHAVONET**
 - GitHub: [@fchavonet](https://github.com/fchavonet)
+
 
