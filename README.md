@@ -136,11 +136,6 @@ python run.py
 
 This demo allows you to test a pre-configured environment and should give a result similar to the screenshots below.
 
-![Home Screenshot](./assets/images/screenshots/home.webp)
-![About Screenshot](./assets/images/screenshots/about.webp)
-![Catalog Screenshot](./assets/images/screenshots/catalog.webp)
-![Dashboard Screenshot](./assets/images/screenshots/dashboard.webp)
-![Profile Screenshot](./assets/images/screenshots/profile.webp)
 
 ## What's Next?
 
@@ -161,5 +156,6 @@ This demo allows you to test a pre-configured environment and should give a resu
 
 **Fabien CHAVONET**
 - GitHub: [@fchavonet](https://github.com/fchavonet)
+
 
 
