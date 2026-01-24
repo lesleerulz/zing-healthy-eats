@@ -1,0 +1,368 @@
+/* RESET CSS */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.navbar-brand,
+.display-1,
+.display-2,
+.display-3,
+.display-4,
+.display-5,
+.display-6,
+.section-title {
+    font-family: 'Instrument Serif', serif;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* SELECTION BEHAVIOR */
+* {
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE10+ */
+    -webkit-user-select: none;
+    /* Safari/Chrome */
+    user-select: none;
+    /* Standard syntax */
+}
+
+input,
+textarea,
+select {
+    -moz-user-select: text;
+    /* Firefox */
+    -ms-user-select: text;
+    /* IE10+ */
+    -webkit-user-select: text;
+    /* Safari/Chrome */
+    user-select: text;
+    /* Standard syntax */
+}
+
+/* GENERAL */
+.container-small {
+    max-width: 992px;
+}
+
+.section-title {
+    padding-bottom: 1rem;
+    position: relative;
+}
+
+.section-title::after {
+    width: 5rem;
+    height: 0.25rem;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    content: "";
+    border-radius: 0.125rem;
+    background-color: #800020;
+}
+
+.table-rounded {
+    overflow: hidden;
+    border-radius: 0.5rem;
+}
+
+.table-rounded .table {
+    margin-bottom: 0;
+}
+
+td {
+    border-color: #e2e3e5 !important;
+}
+
+/* HEADER */
+.avatar {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+}
+
+#cart-quantity {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* HOME */
+#carousel {
+    width: 100%;
+    height: 20rem;
+}
+
+#carousel img {
+    height: 20rem;
+    object-fit: cover;
+    object-position: center;
+}
+
+#thanks-img {
+    height: 20rem;
+    object-fit: cover;
+    object-position: bottom;
+}
+
+/* ABOUT */
+#hero {
+    width: 100%;
+    height: 20rem;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* PROFILE */
+#adress-display {
+    min-width: 16rem;
+}
+
+/* CUSTOM COLOR OVERRIDES */
+/* CUSTOM COLOR OVERRIDES */
+/* Zing Healthy Treats Palette */
+:root {
+    /* Primary: Zing Mustard */
+    --bs-primary: #E1AD01;
+    --bs-primary-rgb: 225, 173, 1;
+    --bs-primary-bg-subtle: #FFF8E1;
+    --bs-primary-border-subtle: #FFE082;
+    --bs-primary-text-emphasis: #0B2C4D;
+    /* Dark Blue text on emphasis */
+
+    /* Secondary/Dark: Zing Dark Blue */
+    --bs-dark: #0B2C4D;
+    --bs-dark-rgb: 11, 44, 77;
+
+    /* Success/Accent: Light Mustard */
+    --bs-success: #F3D36B;
+    --bs-success-rgb: 243, 211, 107;
+    --bs-success-bg-subtle: #FAF7F2;
+    --bs-success-border-subtle: #F3D36B;
+    --bs-success-text-emphasis: #333333;
+
+    /* Body */
+    --bs-body-bg: #121212;
+    /* Dark Background */
+    --bs-body-color: #FAF7F2;
+    /* Soft Cream Text */
+}
+
+/* Primary Button (Mustard with Dark Blue Text) */
+.btn-primary {
+    --bs-btn-color: #0B2C4D;
+    --bs-btn-bg: #E1AD01;
+    --bs-btn-border-color: #E1AD01;
+    --bs-btn-hover-color: #0B2C4D;
+    --bs-btn-hover-bg: #CCA000;
+    --bs-btn-hover-border-color: #B58E00;
+    --bs-btn-focus-shadow-rgb: 225, 173, 1;
+    --bs-btn-active-color: #0B2C4D;
+    --bs-btn-active-bg: #B58E00;
+    --bs-btn-active-border-color: #A37F00;
+    --bs-btn-disabled-color: #0B2C4D;
+    --bs-btn-disabled-bg: #E1AD01;
+    --bs-btn-disabled-border-color: #E1AD01;
+    font-weight: 600;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #E1AD01;
+    --bs-btn-border-color: #E1AD01;
+    --bs-btn-hover-color: #0B2C4D;
+    --bs-btn-hover-bg: #E1AD01;
+    --bs-btn-hover-border-color: #E1AD01;
+    --bs-btn-focus-shadow-rgb: 225, 173, 1;
+    --bs-btn-active-color: #0B2C4D;
+    --bs-btn-active-bg: #E1AD01;
+    --bs-btn-active-border-color: #E1AD01;
+    --bs-btn-disabled-color: #E1AD01;
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: #E1AD01;
+}
+
+.text-primary {
+    color: #E1AD01 !important;
+}
+
+.bg-primary {
+    background-color: #E1AD01 !important;
+    color: #0B2C4D !important;
+}
+
+/* Custom Class for Dark Blue Backgrounds (Header/Footer) */
+.bg-zing-blue {
+    background-color: #0B2C4D !important;
+    color: #FAF7F2;
+}
+
+.text-zing-blue {
+    color: #0B2C4D !important;
+}
+
+/* Override Success to be Light Mustard (Accent) */
+.btn-success {
+    --bs-btn-color: #333333;
+    --bs-btn-bg: #F3D36B;
+    --bs-btn-border-color: #F3D36B;
+    --bs-btn-hover-color: #333333;
+    --bs-btn-hover-bg: #EAC040;
+    --bs-btn-hover-border-color: #E5B830;
+    --bs-btn-focus-shadow-rgb: 243, 211, 107;
+    --bs-btn-active-color: #333333;
+    --bs-btn-active-bg: #E5B830;
+    --bs-btn-active-border-color: #DDAF20;
+    font-weight: 500;
+}
+
+/* General Body Overrides */
+body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+
+
+/* ANIMATIONS & AESTHETICS */
+
+/* Hover Zoom for Product Images */
+.hover-zoom {
+    transition: transform 0.5s ease;
+}
+
+.hover-zoom:hover {
+    transform: scale(1.1);
+}
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+/* Skeleton Loader */
+.skeleton-loader {
+    background: #eee;
+    background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+    border-radius: 5px;
+    background-size: 200% 100%;
+    animation: 1.5s shine linear infinite;
+}
+
+@keyframes shine {
+    to {
+        background-position-x: -200%;
+    }
+}
+
+/* Button Micro-interactions */
+.btn {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 5px 15px rgba(225, 173, 1, 0.4);
+    /* Glow effect for primary */
+}
+
+/* Kinetic Typography Base (Animates via GSAP) */
+.kinetic-text {
+    display: inline-block;
+    will-change: transform, font-weight;
+}
+
+/* Global Image Border */
+img {
+    border: 3px solid #E1AD01;
+    border-radius: 8px;
+    /* Optional: adds nice rounded corners */
+}
+
+/* SEASONAL THEMES */
+
+/* Christmas */
+.theme-christmas .section-title::after {
+    background-color: #D42426;
+    /* Christmas Red */
+}
+
+.theme-christmas {
+    border-color: #D42426 !important;
+}
+
+/* Halloween */
+.theme-halloween .section-title::after {
+    background-color: #FF7518;
+    /* Pumpkin Orange */
+}
+
+.theme-halloween {
+    border-color: #FF7518 !important;
+}
+
+/* Easter */
+.theme-easter .section-title::after {
+    background: linear-gradient(to right, #FF9999, #99FF99, #9999FF);
+}
+
+.theme-easter {
+    border-image: linear-gradient(to right, #FF9999, #99FF99, #9999FF) 1;
+}
+
+
+/* LOADING SPINNER */
+.btn-loading {
+    color: transparent !important;
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 1.5em;
+    height: 1.5em;
+    top: 50%;
+    left: 50%;
+    margin-top: -0.75em;
+    margin-left: -0.75em;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .fs-tiny {
+        font-size: 0.75rem;
+    }
+}

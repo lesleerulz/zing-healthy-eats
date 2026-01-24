@@ -1,0 +1,61 @@
+<div class="card">
+    <!-- Card main -->
+    <a class="text-decoration-none text-light" href="{{ url_for('product_detail', product_id=product.id) }}">
+        <div class="ratio ratio-1x1 bg-light rounded-top overflow-hidden">
+            {% if product.images %}
+            <div id="carousel-{{ product.id }}" class="carousel slide h-100 product-card-carousel"
+                data-bs-interval="false">
+                <div class="carousel-inner h-100">
+                    {% for img in product.images %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %} h-100">
+                        <img class="d-block w-100 h-100 object-fit-cover hover-zoom"
+                            src="{{ url_for('static', filename='images/product_pictures/' + img.image_filename) }}"
+                            alt="{{ product.title }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if product.images|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ product.id }}"
+                    data-bs-slide="prev" onclick="event.preventDefault();">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ product.id }}"
+                    data-bs-slide="next" onclick="event.preventDefault();">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                {% endif %}
+            </div>
+            {% else %}
+            <img class="card-img-top img-fluid rounded-top h-100 object-fit-cover hover-zoom"
+                src="{{ url_for('static', filename='images/product_pictures/' + product.image) }}"
+                alt="{{ product.title }}">
+            {% endif %}
+
+            <!-- Skeleton Loader (Hidden by default, toggled via JS) -->
+            <div class="skeleton-loader position-absolute top-0 start-0 w-100 h-100 d-none"></div>
+        </div>
+
+        <div class="card-body" style="background-color: #E1AD01;">
+            <h5 class="card-title text-dark">{{ product.title }}</h5>
+            <p class="mb-1 card-text text-dark fw-bold">KES {{ "%.2f"|format(product.price) }}</p>
+        </div>
+    </a>
+
+    <!-- Card footer -->
+    <div class="card-footer border-top d-flex align-items-center justify-content-center"
+        style="height: 70px; background-color: #E1AD01;">
+        {% if product.quantity > 0 %}
+        <form class="w-100 d-flex justify-content-between align-items-center" method="POST"
+            action="{{ url_for('add_to_cart', product_id=product.id) }}">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <input class="me-2 form-control" style="width: 80px;" type="number" name="quantity" value="1" min="1">
+
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-bag-plus-fill"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>

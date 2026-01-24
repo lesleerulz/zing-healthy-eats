@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="text-center rounded mb-4">
+    <h2 class="display-5">M-Pesa Payment</h2>
+    <p class="lead text-muted">
+        Enter your M-Pesa phone number to complete the payment.
+    </p>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png"
+                        alt="M-Pesa Logo" class="img-fluid" style="max-height: 80px;">
+                </div>
+
+                <h4 class="text-center mb-4">Total: KES {{ "%.2f"|format(total) }}</h4>
+
+                <form method="post" action="{{ url_for('process_payment') }}">
+                    <div class="mb-3">
+                        <label for="phone_number" class="form-label">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text" id="basic-addon1">+254</span>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                                placeholder="712345678" required pattern="[0-9]{9}"
+                                title="Please enter a valid safaricom number (9 digits after +254)">
+                        </div>
+                        <div class="form-text">Enter your Safaricom number without the leading 0 or +254.</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Pay with M-Pesa</button>
+                        <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary">Back to Cart</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
