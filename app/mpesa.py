@@ -6,11 +6,12 @@ class MpesaClient:
     """
     Client for interacting with Safaricom M-Pesa Daraja API.
     """
-    def __init__(self, consumer_key, consumer_secret, shortcode, passkey, base_url="https://sandbox.safaricom.co.ke"):
+    def __init__(self, consumer_key, consumer_secret, shortcode, passkey, transaction_type="CustomerPayBillOnline", base_url="https://sandbox.safaricom.co.ke"):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.shortcode = shortcode
         self.passkey = passkey
+        self.transaction_type = transaction_type
         self.base_url = base_url
         self.token = None
         self.token_expiry = 0
@@ -57,7 +58,7 @@ class MpesaClient:
             "BusinessShortCode": self.shortcode,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": self.transaction_type,
             "Amount": int(amount),
             "PartyA": phone_number,
             "PartyB": self.shortcode,
@@ -65,6 +66,31 @@ class MpesaClient:
             "CallBackURL": callback_url,
             "AccountReference": account_reference,
             "TransactionDesc": transaction_desc
+        }
+        
+        response = requests.post(api_url, json=request_data, headers=headers)
+        return response.json()
+
+    def query_transaction_status(self, checkout_request_id):
+        """
+        Check the status of a transaction.
+        """
+        if not self.token:
+            self.get_token()
+            
+        api_url = f"{self.base_url}/mpesa/stkpushquery/v1/query"
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+        
+        password, timestamp = self.get_password()
+        
+        request_data = {
+            "BusinessShortCode": self.shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id
         }
         
         response = requests.post(api_url, json=request_data, headers=headers)

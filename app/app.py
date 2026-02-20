@@ -3,7 +3,7 @@ import os
 import csv
 from datetime import datetime
 from io import StringIO
-from flask import Flask, Response, current_app, flash, redirect, render_template, request, url_for
+from flask import Flask, Response, current_app, flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, LoginManager, login_required
 from sqlalchemy import func, or_
 from urllib.parse import urlparse
@@ -961,6 +961,55 @@ def create_app() -> Flask:
             
         db.session.commit()
         return {"result": "success"}
+
+    @app.route("/payment/status/<int:order_id>")
+    @login_required
+    def check_payment_status(order_id):
+        """
+        Check and update payment status for an order.
+        """
+        order = Order.query.get_or_404(order_id)
+        
+        # Ensure user owns the order
+        if order.user_id != current_user.id and not current_user.is_admin:
+            return {"status": "error", "message": "Access denied"}, 403
+            
+        # If already paid or failed, just return status
+        if order.status in ["Paid", "Failed", "Cancelled"]:
+            return {"status": order.status}
+            
+        # If pending, query M-Pesa
+        if order.status == "Pending" and order.checkout_request_id:
+            try:
+                mpesa = MpesaClient(
+                    consumer_key=app.config["MPESA_CONSUMER_KEY"],
+                    consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
+                    shortcode=app.config["MPESA_SHORTCODE"],
+                    passkey=app.config["MPESA_PASSKEY"]
+                )
+                
+                response = mpesa.query_transaction_status(order.checkout_request_id)
+                
+                if "ResultCode" in response:
+                    result_code = response["ResultCode"]
+                    
+                    if result_code == "0":
+                        order.status = "Paid"
+                    elif result_code == "1032":
+                        order.status = "Cancelled"
+                    elif result_code != "0":
+                        order.status = "Failed"
+                         
+                    db.session.commit()
+                    
+                # If errorCode is present, it might still be processing, so we leave as Pending
+                    
+            except Exception as e:
+                # Log error but return current status
+                print(f"Error querying M-Pesa: {e}")
+                pass
+                
+        return {"status": order.status}
 
     @app.route("/orders")
     @login_required

@@ -16,7 +16,7 @@ def get_pending_order():
         # We need an order that has a CheckoutRequestID (meaning STK Push was attempted) 
         # but is potentially still 'Pending' (or we just want to force it to Paid).
         cursor.execute("""
-            SELECT id, checkout_request_id, phone_number, amount 
+            SELECT id, checkout_request_id, phone_number 
             FROM `order` 
             WHERE checkout_request_id IS NOT NULL 
             AND status != 'Paid'

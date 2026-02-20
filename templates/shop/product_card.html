@@ -37,15 +37,15 @@
             <div class="skeleton-loader position-absolute top-0 start-0 w-100 h-100 d-none"></div>
         </div>
 
-        <div class="card-body" style="background-color: #E1AD01;">
-            <h5 class="card-title text-dark">{{ product.title }}</h5>
-            <p class="mb-1 card-text text-dark fw-bold">KES {{ "%.2f"|format(product.price) }}</p>
+        <div class="card-body bg-zing-blue">
+            <h5 class="card-title text-white">{{ product.title }}</h5>
+            <p class="mb-1 card-text text-white fw-bold">KES {{ "%.2f"|format(product.price) }}</p>
         </div>
     </a>
 
     <!-- Card footer -->
-    <div class="card-footer border-top d-flex align-items-center justify-content-center"
-        style="height: 70px; background-color: #E1AD01;">
+    <div class="card-footer border-top d-flex align-items-center justify-content-center bg-zing-blue"
+        style="height: 70px;">
         {% if product.quantity > 0 %}
         <form class="w-100 d-flex justify-content-between align-items-center" method="POST"
             action="{{ url_for('add_to_cart', product_id=product.id) }}">

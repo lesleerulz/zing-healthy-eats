@@ -161,10 +161,10 @@ td {
     --bs-success-text-emphasis: #333333;
 
     /* Body */
-    --bs-body-bg: #121212;
-    /* Dark Background */
-    --bs-body-color: #FAF7F2;
-    /* Soft Cream Text */
+    --bs-body-bg: #E1AD01;
+    /* Mustard Background */
+    --bs-body-color: #0B2C4D;
+    /* Dark Blue Text */
 }
 
 /* Primary Button (Mustard with Dark Blue Text) */

@@ -40,13 +40,28 @@
             {% endfor %}
         </tbody>
 
-        <!-- Footer -->
+        <!-- Footer with Status -->
         <tfoot class="table-secondary">
             <tr>
                 <td></td>
                 <td class="fw-bold">{{ order.items|sum(attribute="quantity") }}</td>
                 <td></td>
                 <td class="fw-bold">KES {{ "%.2f"|format(order.items|sum(attribute="subtotal")) }}</td>
+            </tr>
+            <!-- Status Row (moved here for better structure or as a separate section below table) -->
+            <tr class="table-light border-top">
+                <td colspan="4" class="text-start ps-4 py-3">
+                    <strong>Payment Status:</strong>
+                    <span id="status-{{ order.id }}"
+                        class="badge {% if order.status == 'Paid' %}bg-success{% elif order.status == 'Failed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ order.status }}
+                    </span>
+                    {% if order.status == 'Pending' %}
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="checkStatus({{ order.id }})">
+                        Check Status
+                    </button>
+                    {% endif %}
+                </td>
             </tr>
         </tfoot>
     </table>
@@ -57,4 +72,44 @@
 </section>
 {% endfor %}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function checkStatus(orderId) {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "Checking...";
+        btn.disabled = true;
+
+        fetch(`/payment/status/${orderId}`)
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById(`status-${orderId}`);
+                badge.innerText = data.status;
+
+                // Update badge color
+                badge.className = "badge";
+                if (data.status === "Paid") {
+                    badge.classList.add("bg-success");
+                    btn.remove(); // Remove button if paid
+                } else if (data.status === "Failed" || data.status === "Cancelled") {
+                    badge.classList.add("bg-danger");
+                    btn.remove();
+                } else {
+                    badge.classList.add("bg-warning", "text-dark");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btn.innerText = "Error";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            });
+    }
+</script>
 {% endblock %}

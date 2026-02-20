@@ -9,8 +9,8 @@ from app.models import db, CartItem, Order, OrderItem, User
 # Create blueprint.
 auth_bp = Blueprint("auth", __name__, template_folder="../templates/auth")
 
-# Require one uppercase and at least eight chars.
-PASSWORD_PATTERN = re.compile(r"^(?=.*[A-Z]).{8,}$")
+# Require at least six characters.
+PASSWORD_PATTERN = re.compile(r"^.{6,}$")
 
 
 def allowed_file(filename: str) -> bool:
@@ -50,7 +50,7 @@ def register():
 
         # Check password format.
         if not PASSWORD_PATTERN.match(password):
-            flash("Password must be at least 8 characters long and contain at least one uppercase letter.", "danger")
+            flash("Password must be at least 6 characters long.", "danger")
             return redirect(url_for("auth.register"))
 
         # Check duplicates.
@@ -172,7 +172,7 @@ def google_authorise():
         if User.query.filter_by(username=username).first():
              user.username = f"{username}_{secrets.token_hex(4)}"
              
-        user.set_password(random_password + "A1") # Ensure it meets complexity reqs just in case
+        user.set_password(random_password)
         db.session.add(user)
         db.session.commit()
         
@@ -265,7 +265,7 @@ def profile():
 
             # Validate new password format
             if not PASSWORD_PATTERN.match(new_password):
-                flash("Password must be at least 8 characters long and contain at least one uppercase letter.", "danger")
+                flash("Password must be at least 6 characters long.", "danger")
                 return render_template("auth/profile.html", title="Profile", active_tab="password")
 
             # Save new password
