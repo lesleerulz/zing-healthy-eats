@@ -15,8 +15,7 @@ from app.auth import auth_bp
 from app.models import db, AboutContent, CartItem, CarouselImage, Category, FAQ, Order, OrderItem, Product, ProductImage, SocialLink, TeamMember, User, SiteSetting
 from app.mpesa import MpesaClient
 from config import Config
-
-
+from flask_mail import Mail, Message
 
 def allowed_file(filename: str) -> bool:
     """
@@ -47,6 +46,10 @@ def create_app() -> Flask:
 
     # Initialize database.
     db.init_app(app)
+
+    # Initialize Flask-Mail
+    mail = Mail(app)
+    app.extensions['mail'] = mail
 
     login_manager = LoginManager()
     login_manager.login_view = "auth.login"

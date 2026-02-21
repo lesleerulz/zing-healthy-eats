@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow">
+            <div class="p-4 card-body text-center">
+                <h2 class="mb-3 card-title">Create New Password</h2>
+                <p class="text-muted">Please enter and confirm your new password below.</p>
+                
+                <form method="post">
+                    <div class="mb-3 text-start">
+                        <label class="form-label" style="color: #E1AD01;">New Password:</label>
+                        <div class="input-group">
+                            <input class="form-control form-control-lg" type="password" name="password" id="password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 text-start">
+                        <label class="form-label" style="color: #E1AD01;">Confirm New Password:</label>
+                        <div class="input-group">
+                            <input class="form-control form-control-lg" type="password" name="confirm_password" id="confirm_password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" type="submit">Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setupToggle(toggleId, inputId) {
+        const toggle = document.querySelector(toggleId);
+        const input = document.querySelector(inputId);
+
+        toggle.addEventListener('click', function () {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+
+            this.querySelector('i').classList.toggle('bi-eye');
+            this.querySelector('i').classList.toggle('bi-eye-slash');
+        });
+    }
+
+    setupToggle('#togglePassword', '#password');
+    setupToggle('#toggleConfirmPassword', '#confirm_password');
+</script>
+{% endblock %}

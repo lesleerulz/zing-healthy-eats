@@ -1,8 +1,10 @@
 import os
 import re
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for, session
 from flask_login import current_user, login_user, login_required, logout_user
 from werkzeug.utils import secure_filename
+from flask_mail import Message
+from .tokens import get_reset_token, verify_reset_token
 
 from app.models import db, CartItem, Order, OrderItem, User
 
@@ -121,6 +123,55 @@ def login():
 
     # Render login page.
     return render_template("auth/login.html", title="Login")
+
+
+def send_reset_email(user):
+    token = get_reset_token(user)
+    mail = current_app.extensions['mail']
+    msg = Message('Password Reset Request',
+                  sender=current_app.config['MAIL_USERNAME'],
+                  recipients=[user.email])
+    msg.body = f'''To reset your password, visit the following link:
+{url_for('auth.reset_token', token=token, _external=True)}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    mail.send(msg)
+
+
+@auth_bp.route("/reset_password", methods=['GET', 'POST'])
+def reset_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(user)
+        flash('An email has been sent with instructions to reset your password.', 'info')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_request.html', title='Reset Password')
+
+
+@auth_bp.route("/reset_password/<token>", methods=['GET', 'POST'])
+def reset_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    user = verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('auth.reset_request'))
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for('auth.reset_token', token=token))
+        user.set_password(password)
+        db.session.commit()
+        flash('Your password has been updated! You are now able to log in', 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('auth/reset_token.html', title='Reset Password')
 
 
 @auth_bp.route("/login/google")
