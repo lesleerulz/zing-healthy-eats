@@ -9,7 +9,8 @@ from sqlalchemy import func, or_
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 
-from app.auth import auth_bp
+from flask_compress import Compress
+
 from app.auth import auth_bp
 from app.models import db, AboutContent, CartItem, CarouselImage, Category, FAQ, Order, OrderItem, Product, ProductImage, SocialLink, TeamMember, User, SiteSetting
 from app.mpesa import MpesaClient
@@ -37,6 +38,12 @@ def create_app() -> Flask:
         template_folder="../templates"
     )
     app.config.from_object(Config)
+
+    # Enable gzip/brotli compression for all responses
+    Compress(app)
+
+    # Cache static files for 1 year (browser-side)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
 
     # Initialize database.
     db.init_app(app)
@@ -423,8 +430,6 @@ def create_app() -> Flask:
             # Get form fields.
             title = request.form["title"]
             description = request.form["description"]
-            price = float(request.form["price"])
-            quantity = int(request.form["quantity"])
             price = float(request.form["price"])
             quantity = int(request.form["quantity"])
             category_id = request.form.get("category_id")
@@ -1114,9 +1119,6 @@ def create_app() -> Flask:
             cw.writerow([user.id, user.username, user.email, role])
 
         output = Response(si.getvalue(), mimetype="text/csv")
-        output.headers["Content-Disposition"] = "attachment; filename=zing_users.csv"
-        return output
-
         output.headers["Content-Disposition"] = "attachment; filename=zing_users.csv"
         return output
 

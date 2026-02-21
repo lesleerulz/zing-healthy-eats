@@ -10,7 +10,7 @@
                     <div class="carousel-item {% if loop.first %}active{% endif %} h-100">
                         <img class="d-block w-100 h-100 object-fit-cover hover-zoom"
                             src="{{ url_for('static', filename='images/product_pictures/' + img.image_filename) }}"
-                            alt="{{ product.title }}">
+                            alt="{{ product.title }}" loading="lazy">
                     </div>
                     {% endfor %}
                 </div>
@@ -30,7 +30,7 @@
             {% else %}
             <img class="card-img-top img-fluid rounded-top h-100 object-fit-cover hover-zoom"
                 src="{{ url_for('static', filename='images/product_pictures/' + product.image) }}"
-                alt="{{ product.title }}">
+                alt="{{ product.title }}" loading="lazy">
             {% endif %}
 
             <!-- Skeleton Loader (Hidden by default, toggled via JS) -->

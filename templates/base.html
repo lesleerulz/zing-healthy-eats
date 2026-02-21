@@ -7,29 +7,31 @@
 
 	<title>{{ title or "Zing Healthy Treats" }}</title>
 
-	<!-- Fonts -->
+	<!-- DNS Prefetch for external resources -->
+	<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+	<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+	<!-- Fonts (swap=display for instant text rendering) -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link
-		href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@100..900&display=swap"
-		rel="stylesheet">
+		href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600;700&display=swap"
+		rel="stylesheet" media="print" onload="this.media='all'">
 
-	<!-- Bootstrap -->
+	<!-- Bootstrap (minified) -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" defer></script>
 
 	<!-- CSS -->
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3">
 
-	<!-- Bootstrap Icons-->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<!-- Bootstrap Icons (deferred — icons aren't needed for first paint) -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" media="print" onload="this.media='all'">
 
-	<!-- AOS Animation Library -->
-	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+	<!-- AOS Animation Library (deferred CSS) -->
+	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" media="print" onload="this.media='all'">
 
-	<!-- JS -->
+	<!-- JS — all deferred to not block rendering -->
 	{% if ga_measurement_id %}
-	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
@@ -38,9 +40,10 @@
 		gtag('config', '{{ ga_measurement_id }}');
 	</script>
 	{% endif %}
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-	<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" defer></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+	<script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" defer></script>
 	<script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
@@ -79,7 +82,7 @@
 			<div class="container">
 				<!-- Brand -->
 				<a class="m-0 py-2 navbar-brand" href="{{ url_for('index') }}">
-					<img src="{{ url_for('static', filename='images/logo_zing.png') }}" alt="Zing Healthy Treats"
+					<img src="{{ url_for('static', filename='images/logo_zing.webp') }}" alt="Zing Healthy Treats"
 						height="90">
 				</a>
 
@@ -96,7 +99,7 @@
 						<a href="#" class="d-flex align-items-center" data-bs-toggle="dropdown">
 							<img class="avatar rounded-circle border border-light"
 								src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
-								alt="Profile" height="36" width="36">
+								alt="Profile" loading="lazy" height="36" width="36">
 						</a>
 
 						<ul class="dropdown-menu dropdown-menu-end">
