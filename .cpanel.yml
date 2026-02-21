@@ -1,0 +1,9 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/judith/public_html/
+    - /bin/cp -r app $DEPLOYPATH
+    - /bin/cp -r static $DEPLOYPATH
+    - /bin/cp -r templates $DEPLOYPATH
+    - /bin/cp config.py $DEPLOYPATH
+    - /bin/cp passenger_wsgi.py $DEPLOYPATH
+    - /bin/cp requirements.txt $DEPLOYPATH
