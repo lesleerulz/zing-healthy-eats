@@ -8,3 +8,4 @@ mpesa_app/
 *.egg-info/
 dist/
 build/
+*_backup.png

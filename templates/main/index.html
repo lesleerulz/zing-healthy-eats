@@ -16,7 +16,7 @@
     <div class="carousel-inner rounded shadow-sm">
         {% for image in carousel_images %}
         <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <img class="d-block w-100 object-fit-cover" style="height: 500px;"
+            <img class="d-block w-100 object-fit-cover" style="height: 500px;" loading="eager"
                 src="{{ url_for('static', filename='images/carousel/' + image.image_filename) }}"
                 alt="Carousel slide {{ loop.index }}">
         </div>

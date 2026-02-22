@@ -177,10 +177,27 @@ def create_app() -> Flask:
         """
         Injects the current seasonal theme based on date.
         """
-        # FOR TESTING: Lie about the date being Halloween
-        current_theme = "theme-halloween"
-        greeting = "Happy Halloween"
-            
+        from datetime import date
+        today = date.today()
+        month, day = today.month, today.day
+
+        # Seasonal themes
+        if month == 10 and day >= 25:
+            current_theme = "theme-halloween"
+            greeting = "Happy Halloween"
+        elif month == 12 and day >= 15:
+            current_theme = "theme-christmas"
+            greeting = "Merry Christmas"
+        elif month == 1 and day <= 5:
+            current_theme = "theme-newyear"
+            greeting = "Happy New Year"
+        elif month == 2 and day == 14:
+            current_theme = "theme-valentine"
+            greeting = "Happy Valentine's Day"
+        else:
+            current_theme = ""
+            greeting = ""
+
         return dict(current_theme=current_theme, greeting=greeting)
 
     @app.context_processor

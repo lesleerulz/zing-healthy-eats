@@ -9,7 +9,7 @@
         We’re on a mission to bring you the finest products, delivered fast and with a smile.
     </p>
 
-    <img id="hero" class="img-fluid rounded" src="{{ url_for('static', filename='images/about/' ~ hero_image) }}"
+    <img id="hero" class="img-fluid rounded" loading="eager" src="{{ url_for('static', filename='images/about/' ~ hero_image) }}"
         alt="Hero picture">
 </section>
 
@@ -29,7 +29,7 @@
 
         {% for member in team_members %}
         <div class="col-6 col-lg-2 text-center">
-            <img class="rounded-circle mb-3" width="100" height="100"
+            <img class="rounded-circle mb-3" width="100" height="100" loading="lazy"
                 src="{{ url_for('static', filename='images/about/team/' ~ member.image_filename) }}"
                 alt="{{ member.name }}" style="object-fit: cover;">
             <h5 class="mb-1 text-dark">{{ member.name }}</h5>
