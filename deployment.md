@@ -41,7 +41,7 @@ MPESA_CONSUMER_KEY=your_live_consumer_key_here
 MPESA_CONSUMER_SECRET=your_live_consumer_secret_here
 
 # Your actual Live Till Number
-MPESA_SHORTCODE=your_actual_till_number_here
+MPESA_SHORTCODE=4243516
 
 # The live passkey provided by Safaricom when your Till went live
 MPESA_PASSKEY=your_live_passkey_here
