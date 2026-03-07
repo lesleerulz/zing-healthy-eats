@@ -86,21 +86,24 @@ pip install -r requirements.txt
 flask --app app init-database
 ```
 
-7. Open a Flask shell:
+7. Open a Flask shell (this starts an interactive Python session with the app context):
 
-```
+```bash
 flask --app app shell
 ```
 
-8. Then create an admin user manually for testing purposes:
+8. Inside the Flask shell, run these commands to create an admin user:
 
-```
+```python
 admin = User(username="admin", email="admin@example.com", is_admin=True)
 admin.set_password("demo")
 db.session.add(admin)
 db.session.commit()
 exit()
 ```
+
+> [!TIP]
+> **Fish shell users**: Make sure you are *inside* the `flask shell` before running the Python commands above. If you try to run them directly in the Fish terminal, you will get an "Unsupported use of '='" error.
 
 ### Usage
 

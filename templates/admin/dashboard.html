@@ -94,6 +94,15 @@
 					</button>
 				</div>
 			</div>
+			<div class="col-md-4 mt-3 mt-md-0">
+				<label class="form-label">Support Phone Number</label>
+				<div class="input-group">
+					<span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+					<input type="text" name="support_phone" class="form-control" placeholder="e.g. 0712 345 678"
+						value="{{ support_phone if support_phone else '' }}">
+				</div>
+				<small class="text-muted">Shown on Orders page and About Us page.</small>
+			</div>
 			<div class="col-md-2">
 				<button type="submit" class="btn btn-primary w-100">Save</button>
 			</div>
@@ -109,6 +118,43 @@
 					<li>Click your website stream (or create one).</li>
 					<li>Copy the <strong>Measurement ID</strong> (starts with <code>G-</code>) from the top right.</li>
 				</ol>
+			</div>
+		</div>
+	</form>
+</section>
+
+<!-- Sale Page Settings -->
+<section class="border mb-4 p-3 rounded">
+	<h5 class="fw-bold mb-1">Sale Page</h5>
+	<p class="text-muted small mb-3">
+		Controls the <strong>{{ sale_page_title }}</strong> link in the navbar and its featured-products page.
+	</p>
+	<form action="{{ url_for('manage_settings') }}" method="POST">
+		<!-- Preserve other settings so they aren't wiped on save -->
+		<input type="hidden" name="ga_measurement_id" value="{{ ga_measurement_id if ga_measurement_id else '' }}">
+		<input type="hidden" name="support_phone" value="{{ support_phone if support_phone else '' }}">
+		<div class="row g-3 align-items-end">
+			<div class="col-md-5">
+				<label class="form-label">Page Title</label>
+				<input type="text" name="sale_page_title" class="form-control" placeholder="e.g. Black Friday Deals"
+					value="{{ sale_page_title }}">
+				<div class="form-text">This is the navbar link text and the page heading.</div>
+			</div>
+			<div class="col-md-3 d-flex align-items-center gap-2 pb-1">
+				<div class="form-check form-switch">
+					<input class="form-check-input" type="checkbox" role="switch" id="salePageEnabled"
+						name="sale_page_enabled" {% if sale_page_enabled %}checked{% endif %}>
+					<label class="form-check-label fw-semibold" for="salePageEnabled">
+						{% if sale_page_enabled %}
+						<span class="text-success">Enabled</span>
+						{% else %}
+						<span class="text-secondary">Disabled</span>
+						{% endif %}
+					</label>
+				</div>
+			</div>
+			<div class="col-md-2">
+				<button type="submit" class="btn btn-primary w-100">Save</button>
 			</div>
 		</div>
 	</form>

@@ -33,9 +33,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Unit price:</label>
-                        <input type="number" step="0.01" name="price" class="form-control" value="{{ product.price }}"
-                            required>
+                        <label class="form-label">Unit price (KES):</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" step="0.01" name="price" class="form-control" value="{{ product.price }}"
+                                required>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -52,8 +55,8 @@
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="isPeoplesChoice-{{ product.id }}"
                             name="is_peoples_choice" {% if product.is_peoples_choice %}checked{% endif %}>
-                        <label class="form-check-label" for="isPeoplesChoice-{{ product.id }}">Add to People's Choice
-                            Awards</label>
+                        <label class="form-check-label" for="isPeoplesChoice-{{ product.id }}">Add to {{ sale_page_title
+                            }}</label>
                     </div>
                 </div>
 

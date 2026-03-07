@@ -25,6 +25,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     # Flag indicating if user has admin rights.
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    # Saved M-Pesa phone number for quick checkout.
+    saved_phone = db.Column(db.String(15), nullable=True)
 
     def set_password(self, password: str) -> None:
         """

@@ -54,7 +54,6 @@ def create_app() -> Flask:
     login_manager = LoginManager()
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
-    login_manager.login_message_category = "warning"
     login_manager.init_app(app)
 
     # Fix for cPanel/Passenger running behind a proxy (forces HTTPS)
@@ -99,14 +98,19 @@ def create_app() -> Flask:
         """
         Inject global variables into templates.
         """
-        # Fetch Google Analytics ID
         ga_setting = SiteSetting.query.filter_by(key="ga_measurement_id").first()
-        
+        sale_enabled_setting = SiteSetting.query.filter_by(key="sale_page_enabled").first()
+        sale_title_setting = SiteSetting.query.filter_by(key="sale_page_title").first()
+        support_phone_setting = SiteSetting.query.filter_by(key="support_phone").first()
+
         return {
             "cart_count": CartItem.query.filter_by(user_id=current_user.id).count() if current_user.is_authenticated else 0,
             "current_year": datetime.utcnow().year,
             "social_links": SocialLink.query.all(),
-            "ga_measurement_id": ga_setting.value if ga_setting else None
+            "ga_measurement_id": ga_setting.value if ga_setting else None,
+            "sale_page_enabled": (sale_enabled_setting.value == "true") if sale_enabled_setting else True,
+            "sale_page_title": sale_title_setting.value if sale_title_setting else "People's Choice",
+            "support_phone": support_phone_setting.value if support_phone_setting else None,
         }
 
     @app.route("/")
@@ -148,11 +152,16 @@ def create_app() -> Flask:
     @app.route("/peoples-choice")
     def peoples_choice():
         """
-        Render People's Choice Awards page.
+        Render the admin-controlled sale/featured page.
         """
-        # Fetch products marked as People's Choice
+        sale_enabled = SiteSetting.query.filter_by(key="sale_page_enabled").first()
+        if sale_enabled and sale_enabled.value == "false":
+            from flask import abort
+            abort(404)
+        sale_title = SiteSetting.query.filter_by(key="sale_page_title").first()
+        title = sale_title.value if sale_title else "People's Choice"
         products = Product.query.filter_by(is_peoples_choice=True).all()
-        return render_template("main/peoples_choice.html", title="People's Choice Awards", products=products)
+        return render_template("main/peoples_choice.html", title=title, products=products)
 
     @app.route("/terms_of_use")
     def terms_of_use():
@@ -182,10 +191,7 @@ def create_app() -> Flask:
         month, day = today.month, today.day
 
         # Seasonal themes
-        if month == 10 and day >= 25:
-            current_theme = "theme-halloween"
-            greeting = "Happy Halloween"
-        elif month == 12 and day >= 15:
+        if month == 12 and day >= 15:
             current_theme = "theme-christmas"
             greeting = "Merry Christmas"
         elif month == 1 and day <= 5:
@@ -195,8 +201,9 @@ def create_app() -> Flask:
             current_theme = "theme-valentine"
             greeting = "Happy Valentine's Day"
         else:
-            current_theme = ""
-            greeting = ""
+            # Force Halloween theme for cutscene/theme work
+            current_theme = "theme-halloween"
+            greeting = "Happy Halloween"
 
         return dict(current_theme=current_theme, greeting=greeting)
 
@@ -866,7 +873,7 @@ def create_app() -> Flask:
             
         total = sum(item.product.price * item.quantity for item in items)
         
-        return render_template("shop/payment.html", total=total)
+        return render_template("shop/payment.html", total=total, saved_phone=current_user.saved_phone)
 
     @app.route("/process_payment", methods=["POST"])
     @login_required
@@ -875,6 +882,7 @@ def create_app() -> Flask:
         Initiate M-Pesa STK Push and create order.
         """
         phone_number = request.form.get("phone_number")
+        save_phone = request.form.get("save_phone") == "on"
         if not phone_number:
             flash("Phone number is required.", "danger")
             return redirect(url_for("initiate_checkout_view"))
@@ -899,6 +907,8 @@ def create_app() -> Flask:
         # Create Order (Pending)
         order = Order(user_id=current_user.id, phone_number=phone_number, status="Pending")
         db.session.add(order)
+        db.session.flush()  # Assign order.id before STK Push
+        print(f"[M-Pesa] Created Order #{order.id} for {phone_number}")
         
         # Check stock and create OrderItems
         for item in items:
@@ -920,11 +930,14 @@ def create_app() -> Flask:
 
         try:
             # Initiate STK Push
+            base_url = "https://api.safaricom.co.ke" if app.config["MPESA_ENV"] == "production" else "https://sandbox.safaricom.co.ke"
             mpesa = MpesaClient(
                 consumer_key=app.config["MPESA_CONSUMER_KEY"],
                 consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
                 shortcode=app.config["MPESA_SHORTCODE"],
-                passkey=app.config["MPESA_PASSKEY"]
+                passkey=app.config["MPESA_PASSKEY"],
+                transaction_type=app.config["MPESA_TRANSACTION_TYPE"],
+                base_url=base_url
             )
             
             response = mpesa.stk_push(
@@ -934,10 +947,14 @@ def create_app() -> Flask:
                 account_reference=f"Order-{order.id}",
                 transaction_desc=f"Payment for Order {order.id}"
             )
+            print(f"[M-Pesa STK Response] Order #{order.id}: {response}")
             
             checkout_request_id = response.get("CheckoutRequestID")
             if checkout_request_id:
                 order.checkout_request_id = checkout_request_id
+                # Save phone to user profile if requested
+                if save_phone and current_user.saved_phone != phone_number:
+                    current_user.saved_phone = phone_number
                 # Commit everything
                 CartItem.query.filter_by(user_id=current_user.id).delete()
                 db.session.commit()
@@ -959,30 +976,32 @@ def create_app() -> Flask:
         Handle M-Pesa STK Push callback.
         """
         data = request.get_json()
+        print(f"[M-Pesa Callback] Received: {data}")
         
         if not data or "Body" not in data:
             return {"result": "fail", "message": "Invalid data"}, 400
             
         stk_callback = data["Body"]["stkCallback"]
         checkout_request_id = stk_callback["CheckoutRequestID"]
-        result_code = stk_callback["ResultCode"]
+        result_code = str(stk_callback["ResultCode"])
         
         order = Order.query.filter_by(checkout_request_id=checkout_request_id).first()
         if not order:
+            print(f"[M-Pesa Callback] Order not found for CheckoutRequestID: {checkout_request_id}")
             return {"result": "fail", "message": "Order not found"}, 404
             
-        if result_code == 0:
+        if result_code == "0":
             # Payment success
             order.status = "Paid"
-            metadata = stk_callback["CallbackMetadata"]["Item"]
+            metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
             for item in metadata:
                 if item["Name"] == "MpesaReceiptNumber":
                     order.mpesa_receipt_number = item["Value"]
+            print(f"[M-Pesa Callback] Order #{order.id} marked as Paid")
         else:
             # Payment failed or cancelled
             order.status = "Failed"
-            # Optional: Restore stock? For now, we leave it as failed. 
-            # Admin can manually cancel/refund or user can retry.
+            print(f"[M-Pesa Callback] Order #{order.id} marked as Failed (ResultCode: {result_code})")
             
         db.session.commit()
         return {"result": "success"}
@@ -1003,26 +1022,41 @@ def create_app() -> Flask:
         if order.status in ["Paid", "Failed", "Cancelled"]:
             return {"status": order.status}
             
-        # If pending, query M-Pesa
+         # If pending, query M-Pesa
         if order.status == "Pending" and order.checkout_request_id:
             try:
+                base_url = "https://api.safaricom.co.ke" if app.config["MPESA_ENV"] == "production" else "https://sandbox.safaricom.co.ke"
                 mpesa = MpesaClient(
                     consumer_key=app.config["MPESA_CONSUMER_KEY"],
                     consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
                     shortcode=app.config["MPESA_SHORTCODE"],
-                    passkey=app.config["MPESA_PASSKEY"]
+                    passkey=app.config["MPESA_PASSKEY"],
+                    transaction_type=app.config["MPESA_TRANSACTION_TYPE"],
+                    base_url=base_url
                 )
                 
                 response = mpesa.query_transaction_status(order.checkout_request_id)
+                print(f"[M-Pesa Status Query] Order #{order.id}: {response}")
                 
                 if "ResultCode" in response:
-                    result_code = response["ResultCode"]
+                    result_code = str(response["ResultCode"])
                     
                     if result_code == "0":
                         order.status = "Paid"
+                        # Try to extract receipt number from metadata
+                        if "CallbackMetadata" in response:
+                            try:
+                                for item in response["CallbackMetadata"]["Item"]:
+                                    if item["Name"] == "MpesaReceiptNumber":
+                                        order.mpesa_receipt_number = item["Value"]
+                            except (KeyError, TypeError):
+                                pass
                     elif result_code == "1032":
                         order.status = "Cancelled"
-                    elif result_code != "0":
+                    elif result_code == "1":
+                        # Still processing — leave as Pending
+                        pass
+                    else:
                         order.status = "Failed"
                          
                     db.session.commit()
@@ -1031,7 +1065,7 @@ def create_app() -> Flask:
                     
             except Exception as e:
                 # Log error but return current status
-                print(f"Error querying M-Pesa: {e}")
+                print(f"[M-Pesa Status Query] Error for Order #{order.id}: {e}")
                 pass
                 
         return {"status": order.status}
@@ -1152,15 +1186,22 @@ def create_app() -> Flask:
             return redirect(url_for("index"))
             
         ga_id = request.form.get("ga_measurement_id")
-        
-        # Upsert Google Analytics ID
-        setting = SiteSetting.query.filter_by(key="ga_measurement_id").first()
-        if setting:
-            setting.value = ga_id
-        else:
-            setting = SiteSetting(key="ga_measurement_id", value=ga_id)
-            db.session.add(setting)
-            
+        sale_page_enabled = "true" if request.form.get("sale_page_enabled") == "on" else "false"
+        sale_page_title = request.form.get("sale_page_title", "").strip() or "People's Choice"
+        support_phone = request.form.get("support_phone", "").strip()
+
+        def upsert_setting(key, value):
+            s = SiteSetting.query.filter_by(key=key).first()
+            if s:
+                s.value = value
+            else:
+                db.session.add(SiteSetting(key=key, value=value))
+
+        upsert_setting("ga_measurement_id", ga_id)
+        upsert_setting("sale_page_enabled", sale_page_enabled)
+        upsert_setting("sale_page_title", sale_page_title)
+        upsert_setting("support_phone", support_phone)
+
         db.session.commit()
         flash("Settings updated.", "success")
         return redirect(url_for("dashboard"))

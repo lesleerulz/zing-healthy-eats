@@ -27,7 +27,7 @@
 
     /* Hero Section */
     .hero-section {
-        height: 80vh;
+        height: 60vh;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -37,91 +37,26 @@
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
     }
 
-    /* Kinetic Golden Crown - CSS 3D */
-    .crown-container {
-        position: relative;
-        width: 150px;
-        height: 150px;
-        perspective: 1000px;
-        margin-bottom: 2rem;
-        animation: float 6s ease-in-out infinite;
+    /* Sale badge icon — replaces the heavy CSS 3D crown */
+    .sale-icon {
+        font-size: 5rem;
+        color: var(--gold-primary);
+        animation: pulse-glow 2.5s ease-in-out infinite;
+        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6));
     }
 
-    .crown {
-        width: 100%;
-        height: 100%;
-        transform-style: preserve-3d;
-        animation: rotate 10s linear infinite;
-        position: relative;
-    }
-
-    /* Crown points */
-    .point {
-        position: absolute;
-        width: 30px;
-        height: 80px;
-        background: linear-gradient(to bottom, var(--gold-light), var(--gold-primary));
-        border-radius: 50% 50% 0 0;
-        bottom: 0;
-        left: 50%;
-        transform-origin: bottom center;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-    }
-
-    .point:nth-child(1) {
-        transform: translateX(-50%) rotateY(0deg) translateZ(40px) rotateX(-10deg);
-    }
-
-    .point:nth-child(2) {
-        transform: translateX(-50%) rotateY(72deg) translateZ(40px) rotateX(-10deg);
-    }
-
-    .point:nth-child(3) {
-        transform: translateX(-50%) rotateY(144deg) translateZ(40px) rotateX(-10deg);
-    }
-
-    .point:nth-child(4) {
-        transform: translateX(-50%) rotateY(216deg) translateZ(40px) rotateX(-10deg);
-    }
-
-    .point:nth-child(5) {
-        transform: translateX(-50%) rotateY(288deg) translateZ(40px) rotateX(-10deg);
-    }
-
-    /* Crown band */
-    .band {
-        position: absolute;
-        width: 100px;
-        height: 30px;
-        background: linear-gradient(90deg, var(--gold-dark), var(--gold-primary), var(--gold-light), var(--gold-primary), var(--gold-dark));
-        bottom: 0px;
-        left: 50%;
-        transform: translateX(-50%) translateZ(0);
-        /* Simplified band */
-        border-radius: 50%;
-        /* Fake 3D loop */
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
-    }
-
-    @keyframes rotate {
-        0% {
-            transform: rotateY(0deg);
-        }
-
-        100% {
-            transform: rotateY(360deg);
-        }
-    }
-
-    @keyframes float {
+    @keyframes pulse-glow {
 
         0%,
         100% {
-            transform: translateY(0);
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+            transform: scale(1);
         }
 
         50% {
-            transform: translateY(-20px);
+            filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.9));
+            transform: scale(1.08);
         }
     }
 
@@ -130,17 +65,16 @@
         font-size: 4rem;
         font-weight: 700;
         letter-spacing: 5px;
-        background: linear-gradient(to right, #fff, var(--gold-light), #fff);
+        background: linear-gradient(to bottom, var(--gold-dark) 0%, var(--gold-primary) 50%, var(--gold-light) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-transform: uppercase;
         margin-bottom: 1rem;
-        text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
         z-index: 10;
         text-align: center;
+        filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
     }
-
-
 
     /* Products Section */
     .products-container {
@@ -186,7 +120,6 @@
         flex: 1;
         display: flex;
         justify-content: center;
-        perspective: 1000px;
         z-index: 1;
     }
 
@@ -230,9 +163,11 @@
         font-family: 'Playfair Display', serif;
         font-size: 2.5rem;
         margin-bottom: 1rem;
-        background: linear-gradient(to right, #fff, var(--gold-light));
+        background: linear-gradient(to right, var(--gold-primary), var(--gold-light));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
     }
 
     .product-price {
@@ -274,8 +209,8 @@
         color: #000;
     }
 
-    /* Verified Seal */
-    .verified-seal {
+    /* Sale seal badge */
+    .sale-seal {
         position: absolute;
         top: -20px;
         right: -20px;
@@ -349,21 +284,12 @@
 
 <!-- Hero Section -->
 <section class="hero-section">
-    <!-- Kinetic 3D Crown -->
-    <div class="crown-container">
-        <div class="crown">
-            <div class="point"></div>
-            <div class="point"></div>
-            <div class="point"></div>
-            <div class="point"></div>
-            <div class="point"></div>
-            <div class="band"></div>
-        </div>
+    <!-- Lightweight pulsing icon instead of CPU-heavy CSS 3D crown -->
+    <div class="sale-icon">
+        <i class="bi bi-tag-fill"></i>
     </div>
 
-    <h1 class="page-title">People's Choice</h1>
-
-
+    <h1 class="page-title">{{ title }}</h1>
 </section>
 
 <!-- Products Display -->
@@ -376,13 +302,13 @@
 
         <div class="product-image-wrapper">
             <img src="{{ url_for('static', filename='images/product_pictures/' ~ product.image) }}"
-                alt="{{ product.title }}" class="product-img">
+                alt="{{ product.title }}" class="product-img" loading="lazy" decoding="async">
         </div>
 
         <div class="glass-card">
-            <!-- Verified Seal -->
-            <div class="verified-seal">
-                Verified<br>Admin
+            <!-- Sale seal badge -->
+            <div class="sale-seal">
+                On<br>Sale!
             </div>
 
             <h2 class="product-title">{{ product.title }}</h2>
@@ -396,7 +322,7 @@
     </div>
     {% else %}
     <div class="text-center text-white py-5">
-        <h2>No products selected for the People's Choice Awards yet.</h2>
+        <h2>No products selected for {{ title }} yet.</h2>
         <p class="text-muted">Admin, please select products from the dashboard.</p>
     </div>
     {% endfor %}

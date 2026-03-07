@@ -9,6 +9,19 @@
     </p>
 </section>
 
+{% if support_phone %}
+<section class="alert mb-4 d-flex align-items-center gap-3 rounded" style="background-color: #e8f0fe; border-left: 5px solid #0B2C4D;">
+    <i class="bi bi-headset fs-3" style="color: #0B2C4D;"></i>
+    <div>
+        <strong>Payment issue or need help with your order?</strong><br>
+        <span class="text-muted">Contact our support team directly:</span>
+        <a href="tel:{{ support_phone }}" class="fw-bold ms-1 text-decoration-none" style="color: #0B2C4D;">
+            <i class="bi bi-telephone-fill me-1"></i>{{ support_phone }}
+        </a>
+    </div>
+</section>
+{% endif %}
+
 {% for order in orders %}
 <section class="mb-4 table-responsive table-rounded border">
     <div class="py-2 text-center">
@@ -57,7 +70,7 @@
                         {{ order.status }}
                     </span>
                     {% if order.status == 'Pending' %}
-                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="checkStatus({{ order.id }})">
+                    <button id="check-btn-{{ order.id }}" class="btn btn-sm btn-outline-primary ms-2" onclick="checkStatus({{ order.id }})">
                         Check Status
                     </button>
                     {% endif %}
@@ -76,11 +89,12 @@
 
 {% block scripts %}
 <script>
-    function checkStatus(orderId) {
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "Checking...";
-        btn.disabled = true;
+    function checkStatus(orderId, isAuto = false) {
+        const btn = document.querySelector(`#check-btn-${orderId}`);
+        if (btn && !isAuto) {
+            btn.innerText = "Checking...";
+            btn.disabled = true;
+        }
 
         fetch(`/payment/status/${orderId}`)
             .then(response => response.json())
@@ -92,24 +106,56 @@
                 badge.className = "badge";
                 if (data.status === "Paid") {
                     badge.classList.add("bg-success");
-                    btn.remove(); // Remove button if paid
+                    if (btn) btn.remove();
                 } else if (data.status === "Failed" || data.status === "Cancelled") {
                     badge.classList.add("bg-danger");
-                    btn.remove();
+                    if (btn) btn.remove();
                 } else {
                     badge.classList.add("bg-warning", "text-dark");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+                    if (btn) {
+                        btn.innerText = "Check Status";
+                        btn.disabled = false;
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                btn.innerText = "Error";
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }, 2000);
+                if (btn) {
+                    btn.innerText = "Error";
+                    setTimeout(() => {
+                        btn.innerText = "Check Status";
+                        btn.disabled = false;
+                    }, 2000);
+                }
             });
     }
+
+    // Auto-poll pending orders every 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const pendingOrderIds = [
+            {% for order in orders %}
+                {% if order.status == 'Pending' %}{{ order.id }},{% endif %}
+            {% endfor %}
+        ];
+
+        if (pendingOrderIds.length > 0) {
+            // Check immediately on page load
+            pendingOrderIds.forEach(id => checkStatus(id, true));
+
+            // Then poll every 5 seconds
+            const interval = setInterval(() => {
+                let stillPending = false;
+                pendingOrderIds.forEach(id => {
+                    const badge = document.getElementById(`status-${id}`);
+                    if (badge && badge.innerText === "Pending") {
+                        stillPending = true;
+                        checkStatus(id, true);
+                    }
+                });
+                // Stop polling when no more pending orders
+                if (!stillPending) clearInterval(interval);
+            }, 5000);
+        }
+    });
 </script>
 {% endblock %}

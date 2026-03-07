@@ -29,8 +29,11 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Unit price:</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
+                        <label class="form-label">Unit price (KES):</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -45,7 +48,7 @@
 
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="isPeoplesChoice" name="is_peoples_choice">
-                        <label class="form-check-label" for="isPeoplesChoice">Add to People's Choice Awards</label>
+                        <label class="form-check-label" for="isPeoplesChoice">Add to {{ sale_page_title }}</label>
                     </div>
                 </div>
 

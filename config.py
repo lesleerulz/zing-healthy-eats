@@ -17,7 +17,7 @@ class Config:
 
     # Images upload configuration.
     IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-    MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 
     # Profile pictures.
     PROFILE_PICTURE_FOLDER = os.path.join(basedir, "static", "images", "profile_pictures")
@@ -41,7 +41,9 @@ class Config:
     MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY") or "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
     MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL") or "https://your-domain.com/payment/callback"
     # "CustomerPayBillOnline" for Paybill, "CustomerBuyGoodsOnline" for Till Number
-    MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE") or "CustomerPayBillOnline"
+    MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE") or "CustomerBuyGoodsOnline"
+    # "sandbox" or "production"
+    MPESA_ENV = os.environ.get("MPESA_ENV") or "sandbox"
 
     # Google OAuth Configuration
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")

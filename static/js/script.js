@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize Lottie Animations
   const lottieHome = document.getElementById('lottie-home');
   const lottieLogin = document.getElementById('lottie-login');
+  const lottieCutscene = document.getElementById('lottie-cutscene');
 
   if (typeof lottie !== 'undefined') {
     if (lottieHome) {
@@ -43,53 +44,96 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    if (lottieCutscene) {
+      const cutsceneAnim = lottie.loadAnimation({
+        container: lottieCutscene,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'https://lottie.host/0a99738b-82c5-4d30-8068-15082404e578/u30R9Y4P3E.json' // Example Halloween animation
+      });
+    }
+
+    const lottieLoginLarge = document.getElementById('lottie-login-large');
+    if (lottieLoginLarge) {
+      lottie.loadAnimation({
+        container: lottieLoginLarge,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'https://lottie.host/0a99738b-82c5-4d30-8068-15082404e578/u30R9Y4P3E.json'
+      });
+    }
+
     // Similarly for login if exists (hidden in some views)
     if (lottieLogin && lottieLogin.offsetParent !== null) {
       // Basic placeholder 
     }
   }
 
-  // Initialize GSAP Kinetic Typography
-  const kineticTexts = document.querySelectorAll('.kinetic-text');
-  if (typeof gsap !== 'undefined' && kineticTexts.length > 0) {
-    document.addEventListener('mousemove', (e) => {
-      const xPos = (e.clientX / window.innerWidth - 0.5) * 20;
-      const yPos = (e.clientY / window.innerHeight - 0.5) * 10;
+  /********************************
+  * BOOTSTRAP TOAST AUTO-LAUNCHER *
+  ********************************/
+  const allToasts = [].slice.call(document.querySelectorAll(".toast"))
+  allToasts.map(function (toasts) {
+    const toast = new bootstrap.Toast(toasts)
+    toast.show()
+  })
+});
 
-      gsap.to(kineticTexts, {
-        duration: 0.5,
-        x: xPos,
-        y: yPos,
-        rotation: xPos * 0.5,
-        ease: "power2.out"
+/********************************
+* GSAP SEESAW ANIMATIONS        *
+* window.load ensures GSAP CDN  *
+* script is fully ready         *
+********************************/
+window.addEventListener("load", function () {
+  if (typeof gsap === 'undefined') return;
+
+  // Rocks left→right 3 times then snaps back to normal
+  function playSeesaw(el) {
+    const tl = gsap.timeline();
+    const angle = 4;    // degrees of tilt — visible seesaw without overlapping neighbours
+    const speed = 0.2;  // seconds per half-swing
+
+    tl.set(el, { rotation: 0 })
+      // Swing 1
+      .to(el, { duration: speed, rotation: -angle, ease: "power1.inOut" })
+      .to(el, { duration: speed * 2, rotation: angle, ease: "power1.inOut" })
+      // Swing 2
+      .to(el, { duration: speed * 2, rotation: -angle, ease: "power1.inOut" })
+      .to(el, { duration: speed * 2, rotation: angle, ease: "power1.inOut" })
+      // Swing 3
+      .to(el, { duration: speed * 2, rotation: -angle, ease: "power1.inOut" })
+      // Settle
+      .to(el, { duration: speed * 2, rotation: 0, ease: "elastic.out(1, 0.4)" });
+  }
+
+  // Hero title — plays on page load
+  const heroTitle = document.querySelector('.display-5.kinetic-text');
+  if (heroTitle) playSeesaw(heroTitle);
+
+  // Top Products title — plays when scrolled into view
+  const topProductsTitle = document.getElementById('top-products-title');
+  if (topProductsTitle) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          playSeesaw(topProductsTitle);
+          observer.unobserve(topProductsTitle); // Only once
+        }
       });
-    });
+    }, { threshold: 0.4 });
+    observer.observe(topProductsTitle);
   }
 });
 
 /********************************
-* FORM FEEDBACK *
+* FORM FEEDBACK                 *
 ********************************/
 const forms = document.querySelectorAll('form');
 forms.forEach(form => {
-  form.addEventListener('submit', function (e) {
-    // Find submit button
+  form.addEventListener('submit', function () {
     const btn = form.querySelector('[type="submit"]');
-    if (btn) {
-      // Add loading class
-      btn.classList.add('btn-loading');
-
-      // Optional: If validation fails immediately or checking, remove class?
-      // Since this is standard submit, we assume page reload follows.
-    }
+    if (btn) btn.classList.add('btn-loading');
   });
 });
-
-/********************************
-* BOOTSTRAP TOAST AUTO-LAUNCHER *
-********************************/
-const allToasts = [].slice.call(document.querySelectorAll(".toast"))
-allToasts.map(function (toasts) {
-  const toast = new bootstrap.Toast(toasts)
-  toast.show()
-})

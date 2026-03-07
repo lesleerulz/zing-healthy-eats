@@ -25,9 +25,15 @@
                             <span class="input-group-text" id="basic-addon1">+254</span>
                             <input type="tel" class="form-control" id="phone_number" name="phone_number"
                                 placeholder="712345678" required pattern="[0-9]{9}"
+                                value="{{ saved_phone[3:] if saved_phone and saved_phone.startswith('254') else saved_phone }}"
                                 title="Please enter a valid safaricom number (9 digits after +254)">
                         </div>
                         <div class="form-text">Enter your Safaricom number without the leading 0 or +254.</div>
+                    </div>
+                    
+                    <div class="mb-4 form-check text-start">
+                        <input type="checkbox" class="form-check-input" id="save_phone" name="save_phone" checked>
+                        <label class="form-check-label text-muted small" for="save_phone">Save this number for future checkouts</label>
                     </div>
 
                     <div class="d-grid gap-2">

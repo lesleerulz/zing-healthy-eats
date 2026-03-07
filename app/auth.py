@@ -194,19 +194,34 @@ def google_authorise():
     Handle Google OAuth callback.
     """
     oauth = current_app.extensions['oauth']
+    
+    # Catch access-denied or other errors sent back from Google
+    error = request.args.get('error')
+    if error:
+        flash(f"Google login incomplete: {error}", "warning")
+        return redirect(url_for("auth.login"))
+        
     try:
         token = oauth.google.authorize_access_token()
     except Exception as e:
         flash(f"Failed to log in with Google: {str(e)}", "danger")
         return redirect(url_for("auth.login"))
         
-    user_info = oauth.google.userinfo()
+    try:
+        user_info = oauth.google.userinfo()
+    except Exception as e:
+        flash(f"Failed to fetch user profile from Google: {str(e)}", "danger")
+        return redirect(url_for("auth.login"))
     
     if not user_info:
          flash("Failed to get user info from Google.", "danger")
          return redirect(url_for("auth.login"))
          
     email = user_info.get('email')
+    if not email:
+        flash("Google login did not provide an email address, which is required.", "danger")
+        return redirect(url_for("auth.login"))
+        
     username = user_info.get('name') or email.split('@')[0]
     
     # Check if user exists
