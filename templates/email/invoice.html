@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Zing Healthy Eats - Order Invoice</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .invoice-box { max-width: 600px; margin: auto; padding: 30px; border: 1px solid #eee; background-color: #ffffff; box-shadow: 0 0 10px rgba(0, 0, 0, .15); }
+        .header { text-align: center; border-bottom: 2px solid #E1AD01; padding-bottom: 20px; margin-bottom: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #E1AD01; text-decoration: none; }
+        .details { margin-bottom: 20px; line-height: 1.6; }
+        .details th { text-align: left; padding-right: 20px; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        .items-table th { background-color: #f8f9fa; }
+        .items-table .total-row th, .items-table .total-row td { border-top: 2px solid #ccc; font-weight: bold; }
+        .items-table td.right, .items-table th.right { text-align: right; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        .support { background-color: #fcfcfc; padding: 15px; border-left: 4px solid #E1AD01; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <div class="header">
+            <div class="logo">Zing Healthy Eats</div>
+            <h2 style="margin: 10px 0 0 0; color: #555;">Order Invoice</h2>
+        </div>
+        
+        <table class="details">
+            <tr>
+                <th>Order ID:</th>
+                <td>#{{ order.id }}</td>
+            </tr>
+            <tr>
+                <th>Date Paid:</th>
+                <td>{{ order.created_at.strftime('%B %d, %Y') }}</td>
+            </tr>
+            <tr>
+                <th>M-Pesa Receipt:</th>
+                <td>{{ order.mpesa_receipt_number or "Pending" }}</td>
+            </tr>
+            <tr>
+                <th>Customer:</th>
+                <td>{{ user.username }}</td>
+            </tr>
+            <tr>
+                <th>Email:</th>
+                <td>{{ user.email }}</td>
+            </tr>
+            <tr>
+                <th>Phone:</th>
+                <td>{{ order.phone_number }}</td>
+            </tr>
+        </table>
+        
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th class="right">Qty</th>
+                    <th class="right">Price</th>
+                    <th class="right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set total = namespace(value=0) %}
+                {% for item in order.items %}
+                <tr>
+                    <td>{{ item.product_title }}</td>
+                    <td class="right">{{ item.quantity }}</td>
+                    <td class="right">KSh {{ "%.2f"|format(item.product_price) }}</td>
+                    <td class="right">KSh {{ "%.2f"|format(item.subtotal) }}</td>
+                </tr>
+                {% set total.value = total.value + item.subtotal %}
+                {% endfor %}
+                
+                <tr class="total-row">
+                    <td colspan="3" class="right">Total Paid:</td>
+                    <td class="right">KSh {{ "%.2f"|format(total.value) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="support">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">Need Help?</h4>
+            If you have any questions about this order, please contact us:<br>
+            <strong>Email:</strong> sarahmogoi@gmail.com<br>
+            <strong>Phone:</strong> {{ support_phone or 'Not specified' }}
+        </div>
+        
+        <div class="footer">
+            Thank you for shopping with Zing Healthy Eats!
+        </div>
+    </div>
+</body>
+</html>

@@ -61,17 +61,60 @@ def register():
             flash("User already exists.", "danger")
             return redirect(url_for("auth.register"))
 
-        # Create user.
-        user = User(username=username, email=email)
+        # Create user. New standard registrations are NOT verified by default.
+        user = User(username=username, email=email, is_verified=False)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
-        flash("Registration successful.", "success")
+        flash("Registration successful. You can now log in.", "success")
         return redirect(url_for("auth.login"))
 
     # Render register page.
     return render_template("auth/register.html", title="Register")
+
+def send_verification_email(user):
+    token = get_reset_token(user) # We can reuse the same token generator logic
+    mail = current_app.extensions['mail']
+    msg = Message('Verify Your Account',
+                  sender=current_app.config['MAIL_USERNAME'],
+                  recipients=[user.email])
+    msg.body = f'''To verify your Zing Healthy Eats account, visit the following link:
+{url_for('auth.verify_email', token=token, _external=True)}
+
+If you did not sign up for this account, please ignore this email.
+'''
+    mail.send(msg)
+
+@auth_bp.route("/verify_email/<token>")
+def verify_email(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    user = verify_reset_token(token) # Reuse token verification logic
+    if user is None:
+        flash('The verification link is invalid or has expired.', 'warning')
+        return redirect(url_for('auth.login'))
+        
+    if user.is_verified:
+        flash('Account is already verified. Please log in.', 'info')
+        return redirect(url_for('auth.login'))
+        
+    user.is_verified = True
+    db.session.commit()
+    flash('Your account has been successfully verified!', 'success')
+    return redirect(url_for('auth.profile'))
+
+@auth_bp.route("/send_verification", methods=['POST'])
+@login_required
+def send_verification():
+    if current_user.is_verified:
+        flash('Your account is already verified.', 'info')
+    else:
+        send_verification_email(current_user)
+        flash('A verification link has been sent to your email address.', 'success')
+        
+    return redirect(url_for('auth.profile'))
 
 
 # LOGIN
@@ -233,7 +276,7 @@ def google_authorise():
         import secrets
         random_password = secrets.token_urlsafe(16)
         
-        user = User(username=username, email=email)
+        user = User(username=username, email=email, is_verified=True)
         # Handle potential username collision
         if User.query.filter_by(username=username).first():
              user.username = f"{username}_{secrets.token_hex(4)}"

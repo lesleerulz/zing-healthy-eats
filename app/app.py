@@ -970,6 +970,30 @@ def create_app() -> Flask:
             flash(f"An error occurred: {str(e)}", "danger")
             return redirect(url_for("initiate_checkout_view"))
 
+    def send_order_invoice_email(order):
+        try:
+            user = User.query.get(order.user_id)
+            support_setting = SiteSetting.query.filter_by(key="support_phone").first()
+            support_phone = support_setting.value if support_setting else ""
+            
+            html_body = render_template('email/invoice.html', order=order, user=user, support_phone=support_phone)
+            
+            msg = Message(
+                subject=f"Order Invoice - #{order.id} Zing Healthy Eats",
+                sender=current_app.config["MAIL_USERNAME"],
+                recipients=[user.email, "sarahmogoi@gmail.com", "lesleenyanducha@gmail.com"]
+            )
+            msg.html = html_body
+            
+            mail = current_app.extensions.get('mail')
+            if mail:
+                mail.send(msg)
+                print(f"[Mail] Invoice emailed to {user.email}")
+            else:
+                print("[Mail Error] Mail extension not found.")
+        except Exception as e:
+            print(f"[Mail Error] Failed to send invoice email: {str(e)}")
+
     @app.route("/payment/callback", methods=["POST"])
     def mpesa_callback():
         """
@@ -998,6 +1022,7 @@ def create_app() -> Flask:
                 if item["Name"] == "MpesaReceiptNumber":
                     order.mpesa_receipt_number = item["Value"]
             print(f"[M-Pesa Callback] Order #{order.id} marked as Paid")
+            send_order_invoice_email(order)
         else:
             # Payment failed or cancelled
             order.status = "Failed"
@@ -1051,6 +1076,7 @@ def create_app() -> Flask:
                                         order.mpesa_receipt_number = item["Value"]
                             except (KeyError, TypeError):
                                 pass
+                        send_order_invoice_email(order)
                     elif result_code == "1032":
                         order.status = "Cancelled"
                     elif result_code == "1":

@@ -27,6 +27,8 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     # Saved M-Pesa phone number for quick checkout.
     saved_phone = db.Column(db.String(15), nullable=True)
+    # Flag indicating if the user's email address has been verified.
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
 
     def set_password(self, password: str) -> None:
         """

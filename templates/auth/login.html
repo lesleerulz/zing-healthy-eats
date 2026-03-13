@@ -64,15 +64,15 @@
                         this.querySelector('i').classList.toggle('bi-eye-slash');
                     });
                 </script>
-
-                <p class="text-center mt-3">
-                    <a href="{{ url_for('auth.reset_request') }}" class="text-muted small">Forgot Password?</a>
+                <!-- Links -->
+            <div class="mt-4 text-center">
+                <p class="small text-muted mb-1">
+                    Forgot your password? <a href="{{ url_for('auth.reset_request') }}" class="text-warning text-decoration-none border-bottom border-warning">Reset Password</a>
                 </p>
-
-                <p class="text-center fw-bold" style="color: #E1AD01;">
-                    Don't have an account? <a href="{{ url_for('auth.register') }}" class="fw-bold"
-                        style="color: #0d6efd;">Register</a>
+                <p class="small text-muted mb-0">
+                    Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-warning text-decoration-none border-bottom border-warning">Sign Up</a>
                 </p>
+            </div>
             </form>
         </div>
     </div>

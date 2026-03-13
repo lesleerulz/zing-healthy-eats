@@ -7,9 +7,11 @@
 
 	<title>{{ title or "Zing Healthy Treats" }}</title>
 
-	<!-- DNS Prefetch for external resources -->
 	<link rel="dns-prefetch" href="https://fonts.googleapis.com">
 	<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+	<!-- Favicon -->
+	<link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/logo_zing.webp') }}">
 
 	<!-- Fonts (swap=display for instant text rendering) -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">

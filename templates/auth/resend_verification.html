@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row w-100 p-0 m-0 custom-margin-top mb-5 d-flex justify-content-center">
+    <div class="col-lg-4 col-md-6 col-sm-10 col-12 d-flex flex-column align-items-center">
+        <!-- Application Logo -->
+        <a href="{{ url_for('index') }}" class="mb-5 text-center">
+            <img src="{{ url_for('static', filename='images/' + 'logo.png') }}" alt="" class="" style="height: 50px;">
+        </a>
+
+        <!-- Resend Verification Form -->
+        <div class="card w-100 shadow-sm border-0 bg-dark text-light p-4">
+            <h2 class="h5 mb-3 text-center">Resend Verification Email</h2>
+            <p class="text-center text-muted small mb-4">Enter your email address and we'll send you a new link to verify your account.</p>
+
+            <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="w-100">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control bg-dark text-light border-secondary" id="email" name="email"
+                        placeholder="name@example.com" required>
+                    <label for="email" class="text-muted">Email address</label>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 fw-bold border-0 mt-2">Send Link</button>
+            </form>
+
+            <!-- Links -->
+            <div class="mt-4 text-center">
+                <p class="small text-muted mb-1">
+                    Remembered your password? <a href="{{ url_for('auth.login') }}" class="text-warning text-decoration-none border-bottom border-warning">Log In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

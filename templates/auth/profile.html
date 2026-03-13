@@ -190,7 +190,16 @@
 {% if not current_user.is_admin %}
 <section class="p-4 rounded bg-light">
     <ul class="m-0 mb-4 list-unstyled text-muted">
-        <li>Email verified: <strong class="text-success">yes</strong></li>
+        <li>Email verified: 
+            {% if current_user.is_verified %}
+                <strong class="text-success">yes</strong>
+            {% else %}
+                <strong class="text-danger">no</strong>
+                <form method="POST" action="{{ url_for('auth.send_verification') }}" class="d-inline ms-2">
+                    <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill py-0">Verify Now</button>
+                </form>
+            {% endif %}
+        </li>
         <li>Last order on:
             <span class="fst-italic">
                 {% if last_order_date %}
