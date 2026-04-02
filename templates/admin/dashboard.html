@@ -43,6 +43,152 @@
 	</div>
 </section>
 
+<!-- Recent Orders for Delivery -->
+<section class="border mb-4 p-3 rounded">
+	<h5 class="fw-bold mb-3">Recent Orders (Delivery Management)</h5>
+	<div class="table-responsive">
+		<table class="table table-sm align-middle text-center mt-2">
+			<thead class="table-dark">
+				<tr>
+					<th>ID</th>
+					<th>Date</th>
+					<th>User #ID</th>
+					<th>Status</th>
+					<th>Assigned Driver</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for order in recent_orders %}
+				<tr>
+					<td>#{{ order.id }}</td>
+					<td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+					<td>User {{ order.user_id }}</td>
+					<td>
+						<span class="badge {% if order.status == 'Paid' %}bg-success{% elif order.status == 'Pending' %}bg-warning text-dark{% elif order.status == 'Out for Delivery' %}bg-info text-dark{% elif order.status == 'Awaiting Payment' %}bg-primary{% else %}bg-secondary{% endif %}">
+							{{ order.status }}
+						</span>
+					</td>
+					<td>
+						<form action="{{ url_for('assign_driver', order_id=order.id) }}" method="POST" class="d-flex align-items-center justify-content-center gap-1">
+							<select name="driver_id" class="form-select form-select-sm" style="width: 130px;" onchange="this.form.submit()">
+								<option value="">— None —</option>
+								{% for driver in drivers %}
+								<option value="{{ driver.id }}" {% if order.driver_id == driver.id %}selected{% endif %}>{{ driver.username }}</option>
+								{% endfor %}
+							</select>
+						</form>
+					</td>
+					<td>
+						<a href="{{ url_for('admin_delivery', order_id=order.id) }}" class="btn btn-sm btn-primary">
+							<i class="bi bi-geo-alt-fill me-1"></i> Start Delivery
+						</a>
+					</td>
+				</tr>
+				{% else %}
+				<tr><td colspan="6" class="text-muted">No orders yet.</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<!-- Driver Management -->
+<section class="border mb-4 p-3 rounded">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h5 class="fw-bold m-0"><i class="bi bi-truck me-2"></i>Driver Management</h5>
+		<button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDriverMgmt" aria-expanded="false" aria-controls="collapseDriverMgmt">
+			<i class="bi bi-chevron-down"></i> Expand / Collapse
+		</button>
+	</div>
+
+	<div class="collapse" id="collapseDriverMgmt">
+		{% if drivers %}
+		<div class="mb-3">
+			<strong class="text-muted small">Current Drivers:</strong>
+			<div class="d-flex flex-wrap gap-2 mt-2">
+				{% for driver in drivers %}
+				<span class="badge bg-success fs-6 d-inline-flex align-items-center gap-2 py-2 px-3">
+					<i class="bi bi-person-fill"></i> {{ driver.username }}
+					<form action="{{ url_for('toggle_driver', user_id=driver.id) }}" method="POST" class="m-0 p-0 d-inline">
+						<button type="submit" class="btn btn-link text-white p-0 m-0" title="Remove driver role"
+							onclick="return confirm('Remove driver role from {{ driver.username }}?');" style="text-decoration: none;">
+							<i class="bi bi-x-circle-fill"></i>
+						</button>
+					</form>
+				</span>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+		<div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+			<strong class="text-muted small">All Users:</strong>
+			<input type="text" id="user-search" class="form-control form-control-sm w-auto" placeholder="Search by name or email..." onkeyup="filterUsers()">
+		</div>
+		
+		<div class="table-responsive border" style="max-height: 300px; overflow-y: auto;">
+			<table class="table table-sm align-middle text-center mb-0" id="users-table">
+				<thead class="table-light position-sticky top-0" style="z-index: 1;">
+					<tr>
+						<th>Username</th>
+						<th>Email</th>
+						<th>Role</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for user in all_users %}
+					{% if not user.is_admin %}
+					<tr class="user-row">
+						<td class="user-name">{{ user.username }}</td>
+						<td class="text-muted small user-email">{{ user.email }}</td>
+						<td>
+							{% if user.is_driver %}
+							<span class="badge bg-success">Driver</span>
+							{% else %}
+							<span class="badge bg-secondary">Customer</span>
+							{% endif %}
+						</td>
+						<td>
+							<form action="{{ url_for('toggle_driver', user_id=user.id) }}" method="POST">
+								<button type="submit" class="btn btn-sm {% if user.is_driver %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+									{% if user.is_driver %}
+									<i class="bi bi-person-dash me-1"></i>Remove Driver
+									{% else %}
+									<i class="bi bi-person-plus me-1"></i>Make Driver
+									{% endif %}
+								</button>
+							</form>
+						</td>
+					</tr>
+					{% endif %}
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+	
+	<script>
+	function filterUsers() {
+		let input = document.getElementById('user-search').value.toLowerCase();
+		let rows = document.querySelectorAll('.user-row');
+		
+		rows.forEach(row => {
+			let name = row.querySelector('.user-name').textContent.toLowerCase();
+			let email = row.querySelector('.user-email').textContent.toLowerCase();
+			
+			if (name.includes(input) || email.includes(input)) {
+				row.style.display = '';
+			} else {
+				row.style.display = 'none';
+			}
+		});
+	}
+	</script>
+</section>
+
 <!-- Carousel Management -->
 <section class="border mb-4 p-3 rounded">
 	<h5 class="fw-bold mb-3">Homepage Carousel</h5>

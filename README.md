@@ -140,7 +140,11 @@ python run.py
 This demo allows you to test a pre-configured environment and should give a result similar to the screenshots below.
 
 
-## What's Next?
+## What's Next?source .venv/bin/activate
+pip install -r requirements.txt
+
+source .venv/bin/activate
+pip install -r requirements.txt
 
 - Add user management features to the admin dashboard.
 - Enhance the user profile section.

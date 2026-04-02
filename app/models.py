@@ -25,6 +25,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     # Flag indicating if user has admin rights.
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    # Flag indicating if user is a delivery driver.
+    is_driver = db.Column(db.Boolean, default=False, nullable=False)
     # Saved M-Pesa phone number for quick checkout.
     saved_phone = db.Column(db.String(15), nullable=True)
     # Flag indicating if the user's email address has been verified.
@@ -113,6 +115,12 @@ class Order(db.Model):
     mpesa_receipt_number = db.Column(db.String(20), nullable=True)
     checkout_request_id = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), default="Pending")  # Pending, Paid, Failed
+    # Assigned delivery driver.
+    driver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    driver = db.relationship("User", foreign_keys=[driver_id])
+    # Delivery Coordinates (Lat, Lng)
+    delivery_lat = db.Column(db.Float, nullable=True)
+    delivery_lng = db.Column(db.Float, nullable=True)
     # Relationship to associated order items.
     items = db.relationship("OrderItem", backref="order", lazy=True)
 

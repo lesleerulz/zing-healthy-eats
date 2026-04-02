@@ -179,6 +179,51 @@
 							</ul>
 						</li>
 
+						{% elif current_user.is_driver %}
+						<li class="nav-item">
+							<a class="nav-link" href="{{ url_for('driver_dashboard') }}">
+								<i class="bi bi-truck me-1"></i>My Deliveries
+							</a>
+						</li>
+
+						<!-- Cart button (desktop only) -->
+						<li class="nav-item me-3">
+							<a class="d-none d-lg-flex btn btn-sm btn-success position-relative"
+								href="{{ url_for('cart') }}">
+								<i class="bi bi-bag-fill"></i>
+
+								<span id="cart-quantity"
+									class="badge position-absolute top-0 start-100 translate-middle rounded-circle bg-danger d-flex justify-content-center align-items-center">
+									{{ cart_quantity }}
+								</span>
+							</a>
+						</li>
+
+						<li class="nav-item d-none d-lg-flex dropdown">
+							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+								data-bs-toggle="dropdown">
+								<img class="avatar rounded-circle border border-light"
+									src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
+									alt="Profile picture">
+							</a>
+
+							<ul class="dropdown-menu dropdown-menu-end">
+								<li>
+									<a class="dropdown-item"
+										href="{{ url_for('auth.profile') }}">{{current_user.username}}</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="{{ url_for('order_history') }}">Orders</a>
+								</li>
+
+								<hr class="dropdown-divider">
+
+								<li>
+									<a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a>
+								</li>
+							</ul>
+						</li>
+
 						{% else %}
 
 						<!-- Cart button (desktop only) -->

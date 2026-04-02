@@ -66,13 +66,18 @@
                 <td colspan="4" class="text-start ps-4 py-3">
                     <strong>Payment Status:</strong>
                     <span id="status-{{ order.id }}"
-                        class="badge {% if order.status == 'Paid' %}bg-success{% elif order.status == 'Failed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        class="badge {% if order.status == 'Paid' %}bg-success{% elif order.status == 'Failed' %}bg-danger{% elif order.status == 'Awaiting Payment' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
                         {{ order.status }}
                     </span>
                     {% if order.status == 'Pending' %}
                     <button id="check-btn-{{ order.id }}" class="btn btn-sm btn-outline-primary ms-2" onclick="checkStatus({{ order.id }})">
                         Check Status
                     </button>
+                    {% endif %}
+                    {% if order.status == 'Out for Delivery' %}
+                    <a href="{{ url_for('track_order', order_id=order.id) }}" class="btn btn-sm btn-info ms-2 text-white">
+                        <i class="bi bi-geo-alt-fill me-1"></i> Track Delivery
+                    </a>
                     {% endif %}
                 </td>
             </tr>
