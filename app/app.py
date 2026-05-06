@@ -3,16 +3,18 @@ import os
 import csv
 from datetime import datetime
 from io import StringIO
-from flask import Flask, Response, current_app, flash, redirect, render_template, request, url_for, session
+from flask import Flask, Response, current_app, flash, jsonify, redirect, render_template, request, url_for, session
 from flask_login import current_user, LoginManager, login_required
 from sqlalchemy import func, or_
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 
 from flask_compress import Compress
+from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, emit
 
 from app.auth import auth_bp
+from app.api import api_bp
 
 socketio = SocketIO(async_mode='threading')
 
@@ -44,6 +46,9 @@ def create_app() -> Flask:
 
     # Enable gzip/brotli compression for all responses
     Compress(app)
+
+    # Enable CORS for API routes (Next.js frontend on different port).
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     
     # Initialize SocketIO
     socketio.init_app(app, cors_allowed_origins="*")
@@ -116,6 +121,7 @@ def create_app() -> Flask:
 
     # Register authentication blueprint.
     app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp)
 
     @app.context_processor
     def inject_globals():
@@ -128,7 +134,6 @@ def create_app() -> Flask:
         support_phone_setting = SiteSetting.query.filter_by(key="support_phone").first()
 
         return {
-            "cart_count": CartItem.query.filter_by(user_id=current_user.id).count() if current_user.is_authenticated else 0,
             "current_year": datetime.utcnow().year,
             "social_links": SocialLink.query.all(),
             "ga_measurement_id": ga_setting.value if ga_setting else None,
@@ -140,130 +145,30 @@ def create_app() -> Flask:
     @app.route("/")
     def index():
         """
-        Render home page.
+        Redirect to the Next.js frontend or a simple API landing page.
         """
-
-        # Fetch homepage carousel images.
-        carousel_images = CarouselImage.query.order_by(CarouselImage.created_at.desc()).all()
-
-        # Fetch FAQs.
-        faqs = FAQ.query.all()
-
-        return render_template("main/index.html", title="Home", carousel_images=carousel_images, faqs=faqs)
-
+        return jsonify({
+            "name": "Zing Healthy Treats API",
+            "version": "2.0.0",
+            "status": "active",
+            "frontend_url": "http://localhost:3000"
+        })
+    
     @app.route("/about")
     def about():
-        """
-        Render about page.
-        """
-
-        team_members = TeamMember.query.all()
-        # Fallback if no team members
-        if not team_members:
-             team_members = []
-
-        # Fetch "Our Story" content.
-        our_story_content = AboutContent.query.filter_by(section="our_story").first()
-        our_story_text = our_story_content.content if our_story_content else "Our story content goes here."
-        
-        # Fetch "About Hero" image (stored as content in AboutContent with section='about_hero')
-        hero_content = AboutContent.query.filter_by(section="about_hero").first()
-        hero_image = hero_content.content if hero_content else "hero.webp" # Default fallback
-
-        # Render about template.
-        return render_template("main/about.html", title="About", team_members=team_members, our_story_text=our_story_text, hero_image=hero_image)
+        return redirect("http://localhost:3000/about")
 
     @app.route("/peoples-choice")
     def peoples_choice():
-        """
-        Render the admin-controlled sale/featured page.
-        """
-        sale_enabled = SiteSetting.query.filter_by(key="sale_page_enabled").first()
-        if sale_enabled and sale_enabled.value == "false":
-            from flask import abort
-            abort(404)
-        sale_title = SiteSetting.query.filter_by(key="sale_page_title").first()
-        title = sale_title.value if sale_title else "People's Choice"
-        products = Product.query.filter_by(is_peoples_choice=True).all()
-        return render_template("main/peoples_choice.html", title=title, products=products)
+        return redirect("http://localhost:3000/peoples-choice")
 
-    @app.route("/terms_of_use")
+    @app.route("/terms")
     def terms_of_use():
-        """
-        Render terms of use page.
-        """
-
-        # Render terms of use template.
-        return render_template("policies/terms_of_use.html", title="Terms of Use")
+        return redirect("http://localhost:3000/terms")
 
     @app.route("/legals")
     def legals():
-        """
-        Render legals page.
-        """
-
-        # Render legals template.
-        return render_template("policies/legals.html", title="Legals")
-
-    @app.context_processor
-    def inject_theme():
-        """
-        Injects the current seasonal theme based on date.
-        """
-        from datetime import date
-        today = date.today()
-        month, day = today.month, today.day
-
-        # Seasonal themes
-        if month == 12 and day >= 15:
-            current_theme = "theme-christmas"
-            greeting = "Merry Christmas"
-        elif month == 1 and day <= 5:
-            current_theme = "theme-newyear"
-            greeting = "Happy New Year"
-        elif month == 2 and day == 14:
-            current_theme = "theme-valentine"
-            greeting = "Happy Valentine's Day"
-        else:
-            # Force Halloween theme for cutscene/theme work
-            current_theme = "theme-halloween"
-            greeting = "Happy Halloween"
-
-        return dict(current_theme=current_theme, greeting=greeting)
-
-    @app.context_processor
-    def inject_products():
-        """
-        Injects the latest and top-selling products into the template context.
-        """
-
-        latest_products = (
-            Product.query
-            .order_by(Product.id.desc())
-            .limit(4)
-            .all()
-        )
-
-        top_query = (
-            db.session
-            .query(Product, func.sum(OrderItem.quantity).label("total"))
-            .join(OrderItem, Product.id == OrderItem.product_id)
-            .group_by(Product.id)
-            .order_by(func.sum(OrderItem.quantity).desc())
-            .limit(4)
-            .all()
-        )
-        top_products = [p for p, _ in top_query]
-
-        return dict(latest_products=latest_products, top_products=top_products)
-
-    @app.context_processor
-    def inject_cart_quantity():
-        if current_user.is_authenticated:
-            count = db.session.query(func.sum(CartItem.quantity)).filter_by(user_id=current_user.id).scalar() or 0
-        else:
-            count = 0
-        return dict(cart_quantity=count)
+        return redirect("http://localhost:3000/legals")
 
     @app.route("/dashboard")
     @login_required

@@ -46,6 +46,22 @@ class User(UserMixin, db.Model):
 
         return check_password_hash(self.password_hash, password)
 
+    def to_dict(self) -> dict:
+        """
+        Serialize user to dictionary (excludes password hash).
+        """
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "address": self.address,
+            "profile_picture": self.profile_picture,
+            "is_admin": self.is_admin,
+            "is_driver": self.is_driver,
+            "saved_phone": self.saved_phone,
+            "is_verified": self.is_verified,
+        }
+
 
 class Category(db.Model):
     """
@@ -58,6 +74,9 @@ class Category(db.Model):
     name = db.Column(db.String(50), nullable=False, unique=True)
     # Relationship to products in this category.
     products = db.relationship("Product", backref="category", lazy=True)
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "name": self.name}
 
 
 class Product(db.Model):
@@ -86,6 +105,21 @@ class Product(db.Model):
     # Relationship to product images.
     images = db.relationship("ProductImage", backref="product", lazy=True, cascade="all, delete-orphan")
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "image": self.image,
+            "price": self.price,
+            "quantity": self.quantity,
+            "category_id": self.category_id,
+            "category_name": self.category.name if self.category else None,
+            "is_peoples_choice": self.is_peoples_choice,
+            "date_added": self.date_added.isoformat() if self.date_added else None,
+            "images": [img.image_filename for img in self.images],
+        }
+
 
 class ProductImage(db.Model):
     """
@@ -96,6 +130,14 @@ class ProductImage(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     image_filename = db.Column(db.String(128), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "product_id": self.product_id,
+            "image_filename": self.image_filename,
+            "is_primary": self.is_primary,
+        }
 
 
 class Order(db.Model):
@@ -123,6 +165,21 @@ class Order(db.Model):
     delivery_lng = db.Column(db.Float, nullable=True)
     # Relationship to associated order items.
     items = db.relationship("OrderItem", backref="order", lazy=True)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "phone_number": self.phone_number,
+            "mpesa_receipt_number": self.mpesa_receipt_number,
+            "status": self.status,
+            "driver_id": self.driver_id,
+            "delivery_lat": self.delivery_lat,
+            "delivery_lng": self.delivery_lng,
+            "items": [item.to_dict() for item in self.items],
+            "total": sum(item.subtotal for item in self.items),
+        }
 
 
 class OrderItem(db.Model):
@@ -153,6 +210,17 @@ class OrderItem(db.Model):
         
         return self.quantity * self.product_price
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "order_id": self.order_id,
+            "product_id": self.product_id,
+            "quantity": self.quantity,
+            "product_title": self.product_title,
+            "product_price": self.product_price,
+            "subtotal": self.subtotal,
+        }
+
 
 class CartItem(db.Model):
     """
@@ -172,6 +240,15 @@ class CartItem(db.Model):
     # Relationship to the Product model.
     product = db.relationship("Product")
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "product_id": self.product_id,
+            "quantity": self.quantity,
+            "product": self.product.to_dict() if self.product else None,
+            "subtotal": (self.product.price * self.quantity) if self.product else 0,
+        }
+
 
 class CarouselImage(db.Model):
     """
@@ -180,6 +257,13 @@ class CarouselImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     image_filename = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "image_filename": self.image_filename,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 
 class FAQ(db.Model):
@@ -190,6 +274,9 @@ class FAQ(db.Model):
     question = db.Column(db.String(255), nullable=False)
     answer = db.Column(db.Text, nullable=False)
 
+    def to_dict(self) -> dict:
+        return {"id": self.id, "question": self.question, "answer": self.answer}
+
 
 class AboutContent(db.Model):
     """
@@ -198,6 +285,9 @@ class AboutContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     section = db.Column(db.String(50), nullable=False, unique=True)  # e.g., 'our_story'
     content = db.Column(db.Text, nullable=False)
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "section": self.section, "content": self.content}
 
 
 class SocialLink(db.Model):
@@ -209,6 +299,14 @@ class SocialLink(db.Model):
     url = db.Column(db.String(255), nullable=False)
     icon_class = db.Column(db.String(50), nullable=False) # e.g., 'bi bi-facebook'
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "platform": self.platform,
+            "url": self.url,
+            "icon_class": self.icon_class,
+        }
+
 
 class TeamMember(db.Model):
     """
@@ -219,6 +317,14 @@ class TeamMember(db.Model):
     role = db.Column(db.String(100), nullable=False)
     image_filename = db.Column(db.String(128), nullable=False) # stored in static/images/about/team/
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "role": self.role,
+            "image_filename": self.image_filename,
+        }
+
 
 class SiteSetting(db.Model):
     """
@@ -227,5 +333,8 @@ class SiteSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(50), unique=True, nullable=False)
     value = db.Column(db.String(255), nullable=True)
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "key": self.key, "value": self.value}
 
 
