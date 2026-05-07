@@ -17,7 +17,7 @@ from app.models import (
     db, AboutContent, CartItem, CarouselImage, Category, FAQ,
     Order, OrderItem, Product, SiteSetting, SocialLink, TeamMember, User
 )
-from app.mpesa import MpesaClient
+from app.paystack import PaystackClient
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -412,7 +412,7 @@ def api_remove_from_cart(product_id):
 @api_bp.route("/checkout/mpesa", methods=["POST"])
 @token_required
 def api_checkout_mpesa():
-    """Initiate M-Pesa STK Push checkout."""
+    """Initiate M-Pesa checkout via Paystack Charge API."""
     user = request.api_user
     data = request.get_json(silent=True) or {}
     phone_number = (data.get("phone_number") or "").strip()
@@ -423,19 +423,23 @@ def api_checkout_mpesa():
     if not phone_number:
         return jsonify({"error": "Phone number is required."}), 400
 
-    # Normalize phone number format.
-    if phone_number.startswith("0"):
-        phone_number = "254" + phone_number[1:]
-    elif phone_number.startswith("+254"):
-        phone_number = phone_number[1:]
-    elif not phone_number.startswith("254"):
-        phone_number = "254" + phone_number
+    # Format phone number for Paystack (KES M-Pesa needs 254...)
+    formatted_phone = phone_number
+    if formatted_phone.startswith("0"):
+        formatted_phone = "254" + formatted_phone[1:]
+    elif formatted_phone.startswith("+"):
+        formatted_phone = formatted_phone[1:]
+    
+    # Ensure it starts with 254 if it's a 9-digit number
+    if len(formatted_phone) == 9:
+        formatted_phone = "254" + formatted_phone
 
     items = CartItem.query.filter_by(user_id=user.id).all()
     if not items:
         return jsonify({"error": "Cart is empty."}), 400
 
     amount = sum(item.product.price * item.quantity for item in items)
+    paystack_amount = int(amount * 100)
 
     # Create Order.
     order = Order(user_id=user.id, phone_number=phone_number, status="Pending")
@@ -468,52 +472,44 @@ def api_checkout_mpesa():
 
     try:
         app = current_app._get_current_object()
-        base_url = (
-            "https://api.safaricom.co.ke"
-            if app.config["MPESA_ENV"] == "production"
-            else "https://sandbox.safaricom.co.ke"
+        paystack = PaystackClient(secret_key=app.config["PAYSTACK_SECRET_KEY"])
+        
+        # Paystack reference
+        reference = f"ZING-MPESA-{order.id}-{int(datetime.now().timestamp())}"
+        
+        response = paystack.charge_mobile_money(
+            email=user.email,
+            amount=paystack_amount,
+            phone=formatted_phone,
+            reference=reference
         )
-        mpesa = MpesaClient(
-            consumer_key=app.config["MPESA_CONSUMER_KEY"],
-            consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
-            shortcode=app.config["MPESA_SHORTCODE"],
-            passkey=app.config["MPESA_PASSKEY"],
-            transaction_type=app.config["MPESA_TRANSACTION_TYPE"],
-            base_url=base_url,
-        )
+        print(f"[Paystack M-Pesa] Request: phone={formatted_phone}, amount={paystack_amount}, reference={reference}")
+        print(f"[Paystack M-Pesa] Response: {response}")
 
-        response = mpesa.stk_push(
-            phone_number=phone_number,
-            amount=amount,
-            callback_url=app.config["MPESA_CALLBACK_URL"],
-            account_reference=f"Order-{order.id}",
-            transaction_desc=f"Payment for Order {order.id}",
-        )
-
-        checkout_request_id = response.get("CheckoutRequestID")
-        if checkout_request_id:
-            order.checkout_request_id = checkout_request_id
+        if response.get("status"):
+            order.paystack_reference = reference
             if save_phone and user.saved_phone != phone_number:
                 user.saved_phone = phone_number
             CartItem.query.filter_by(user_id=user.id).delete()
             db.session.commit()
             return jsonify({
-                "message": "Payment initiated. Check your phone.",
+                "message": "Payment initiated. Please check your phone for the M-Pesa prompt.",
                 "order": order.to_dict(),
+                "reference": reference
             })
         else:
             db.session.rollback()
-            return jsonify({"error": response.get("errorMessage", "STK Push failed.")}), 502
+            return jsonify({"error": response.get("message", "Paystack M-Pesa initiation failed.")}), 502
 
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
-@api_bp.route("/checkout/till", methods=["POST"])
+@api_bp.route("/checkout/paystack/initialize", methods=["POST"])
 @token_required
-def api_checkout_till():
-    """Create an order with 'Awaiting Payment' status for manual till payment."""
+def api_checkout_paystack_initialize():
+    """Initialize Paystack transaction."""
     user = request.api_user
     data = request.get_json(silent=True) or {}
     delivery_lat = data.get("delivery_lat")
@@ -523,7 +519,13 @@ def api_checkout_till():
     if not items:
         return jsonify({"error": "Cart is empty."}), 400
 
-    order = Order(user_id=user.id, status="Awaiting Payment")
+    amount = sum(item.product.price * item.quantity for item in items)
+    # Paystack amount is in kobo/cents. For KES, it's also cents? 
+    # Actually Paystack KES uses cents (multiply by 100).
+    paystack_amount = int(amount * 100)
+
+    # Create Order.
+    order = Order(user_id=user.id, status="Pending")
     if delivery_lat and delivery_lng:
         try:
             order.delivery_lat = float(delivery_lat)
@@ -534,6 +536,7 @@ def api_checkout_till():
     db.session.add(order)
     db.session.flush()
 
+    # Check stock and create OrderItems.
     for item in items:
         product = item.product
         if product.quantity < item.quantity:
@@ -550,13 +553,62 @@ def api_checkout_till():
         )
         db.session.add(order_item)
 
-    CartItem.query.filter_by(user_id=user.id).delete()
-    db.session.commit()
+    try:
+        app = current_app._get_current_object()
+        paystack = PaystackClient(secret_key=app.config["PAYSTACK_SECRET_KEY"])
+        
+        # Paystack reference can be custom.
+        reference = f"ZING-{order.id}-{int(datetime.now().timestamp())}"
+        
+        response = paystack.initialize_transaction(
+            email=user.email,
+            amount=paystack_amount,
+            callback_url=app.config["PAYSTACK_CALLBACK_URL"],
+            reference=reference
+        )
 
-    return jsonify({
-        "message": "Order placed! Please pay via M-Pesa Till Number 4243516.",
-        "order": order.to_dict(),
-    }), 201
+        if response.get("status"):
+            order.paystack_reference = reference
+            db.session.commit()
+            return jsonify(response["data"])
+        else:
+            db.session.rollback()
+            return jsonify({"error": response.get("message", "Paystack initialization failed.")}), 502
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api_bp.route("/checkout/paystack/verify/<reference>", methods=["GET"])
+@token_required
+def api_checkout_paystack_verify(reference):
+    """Verify Paystack transaction."""
+    user = request.api_user
+    order = Order.query.filter_by(paystack_reference=reference).first_or_404()
+
+    if order.user_id != user.id and not user.is_admin:
+        return jsonify({"error": "Access denied."}), 403
+
+    if order.status == "Paid":
+        return jsonify({"status": "Paid", "order": order.to_dict()})
+
+    try:
+        app = current_app._get_current_object()
+        paystack = PaystackClient(secret_key=app.config["PAYSTACK_SECRET_KEY"])
+        response = paystack.verify_transaction(reference)
+
+        if response.get("status") and response["data"]["status"] == "success":
+            order.status = "Paid"
+            # Clear cart only after successful payment verification
+            CartItem.query.filter_by(user_id=user.id).delete()
+            db.session.commit()
+            return jsonify({"status": "Paid", "order": order.to_dict()})
+        else:
+            return jsonify({"status": order.status, "message": response.get("message", "Verification failed.")})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -585,44 +637,22 @@ def api_order_status(order_id):
     if order.status in ["Paid", "Failed", "Cancelled"]:
         return jsonify({"status": order.status, "order": order.to_dict()})
 
-    if order.status == "Pending" and order.checkout_request_id:
+    if order.status == "Pending" and order.paystack_reference:
         try:
             app = current_app._get_current_object()
-            base_url = (
-                "https://api.safaricom.co.ke"
-                if app.config["MPESA_ENV"] == "production"
-                else "https://sandbox.safaricom.co.ke"
-            )
-            mpesa = MpesaClient(
-                consumer_key=app.config["MPESA_CONSUMER_KEY"],
-                consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
-                shortcode=app.config["MPESA_SHORTCODE"],
-                passkey=app.config["MPESA_PASSKEY"],
-                transaction_type=app.config["MPESA_TRANSACTION_TYPE"],
-                base_url=base_url,
-            )
+            paystack = PaystackClient(secret_key=app.config["PAYSTACK_SECRET_KEY"])
+            response = paystack.verify_transaction(order.paystack_reference)
 
-            response = mpesa.query_transaction_status(order.checkout_request_id)
-
-            if "ResultCode" in response:
-                result_code = str(response["ResultCode"])
-                if result_code == "0":
-                    order.status = "Paid"
-                    if "CallbackMetadata" in response:
-                        try:
-                            for meta_item in response["CallbackMetadata"]["Item"]:
-                                if meta_item["Name"] == "MpesaReceiptNumber":
-                                    order.mpesa_receipt_number = meta_item["Value"]
-                        except (KeyError, TypeError):
-                            pass
-                elif result_code == "1032":
-                    order.status = "Cancelled"
-                elif result_code != "1":
-                    order.status = "Failed"
-
+            if response.get("status") and response["data"]["status"] == "success":
+                order.status = "Paid"
+                # For M-Pesa via Paystack, the receipt number is in authorization.last4 or similar
+                # but usually we just care that it's success.
+                db.session.commit()
+            elif response.get("status") and response["data"]["status"] in ["failed", "reversed"]:
+                order.status = "Failed"
                 db.session.commit()
 
         except Exception as e:
-            print(f"[API M-Pesa Status Query] Error for Order #{order.id}: {e}")
+            print(f"[API Order Status Query] Error for Order #{order.id}: {e}")
 
     return jsonify({"status": order.status, "order": order.to_dict()})

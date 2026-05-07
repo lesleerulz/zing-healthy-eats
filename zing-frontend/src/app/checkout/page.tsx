@@ -17,7 +17,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "till">("mpesa");
+  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "paystack">("mpesa");
   const [phone, setPhone] = useState("");
   const [savePhone, setSavePhone] = useState(false);
 
@@ -54,7 +54,7 @@ export default function CheckoutPage() {
     }
     setProcessing(true);
     try {
-      const result = await fetchApi<{ message: string }>("/api/checkout/mpesa", {
+      const result = await fetchApi<{ message: string; order: any; reference: string }>("/api/checkout/mpesa", {
         method: "POST",
         body: JSON.stringify({
           phone_number: phone,
@@ -71,19 +71,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleTillCheckout = async () => {
+  const handlePaystackCheckout = async () => {
     setProcessing(true);
     try {
-      const result = await fetchApi<{ message: string }>("/api/checkout/till", {
+      const result = await fetchApi<{ authorization_url: string }>("/api/checkout/paystack/initialize", {
         method: "POST",
         body: JSON.stringify({}),
       });
-      toast.success(result.message);
-      await refreshCart();
-      router.push("/orders");
+      // Redirect to Paystack
+      window.location.href = result.authorization_url;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Checkout failed");
-    } finally {
+      toast.error(err instanceof Error ? err.message : "Paystack initialization failed");
       setProcessing(false);
     }
   };
@@ -129,23 +127,45 @@ export default function CheckoutPage() {
             }`}
           >
             <Phone className="h-6 w-6 text-brand-green mb-2" />
-            <p className="font-semibold text-brand-blue">M-Pesa STK Push</p>
-            <p className="text-xs text-slate-500 mt-1">Pay instantly from your phone</p>
+            <p className="font-semibold text-brand-blue text-sm">M-Pesa</p>
+            <p className="text-[10px] text-slate-500 mt-1">STK Push via Paystack</p>
           </button>
 
           <button
-            onClick={() => setPaymentMethod("till")}
+            onClick={() => setPaymentMethod("paystack")}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
-              paymentMethod === "till"
+              paymentMethod === "paystack"
                 ? "border-brand-mustard bg-brand-mustard/5 shadow-md"
                 : "border-slate-200 hover:border-slate-300"
             }`}
           >
-            <Building2 className="h-6 w-6 text-brand-blue mb-2" />
-            <p className="font-semibold text-brand-blue">Pay via Till</p>
-            <p className="text-xs text-slate-500 mt-1">Till Number: 4243516</p>
+            <CreditCard className="h-6 w-6 text-orange-500 mb-2" />
+            <p className="font-semibold text-brand-blue text-sm">Card/Other</p>
+            <p className="text-[10px] text-slate-500 mt-1">Via Paystack</p>
           </button>
         </div>
+
+        {/* Paystack Form */}
+        {paymentMethod === "paystack" && (
+          <Card className="border shadow-sm">
+            <CardContent className="pt-6 space-y-4">
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  You will be redirected to <strong>Paystack</strong> to securely complete your payment using Card, Bank Transfer, or other available methods.
+                </p>
+              </div>
+
+              <Button
+                onClick={handlePaystackCheckout}
+                disabled={processing}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl h-12 text-base"
+              >
+                <CreditCard className="h-5 w-5 mr-2" />
+                {processing ? "Redirecting..." : `Pay KSh ${cart.total.toLocaleString()}`}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* M-Pesa Form */}
         {paymentMethod === "mpesa" && (
@@ -184,33 +204,6 @@ export default function CheckoutPage() {
               >
                 <CreditCard className="h-5 w-5 mr-2" />
                 {processing ? "Processing..." : `Pay KSh ${cart.total.toLocaleString()}`}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Till Instructions */}
-        {paymentMethod === "till" && (
-          <Card className="border shadow-sm">
-            <CardContent className="pt-6 space-y-4">
-              <div className="bg-brand-blue/5 p-4 rounded-lg">
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  <strong>Instructions:</strong> Go to M-Pesa on your phone, select{" "}
-                  <strong>Lipa na M-Pesa</strong> → <strong>Buy Goods and Services</strong>{" "}
-                  → Enter Till Number <strong className="text-brand-blue">4243516</strong>{" "}
-                  → Amount{" "}
-                  <strong className="text-brand-blue">
-                    KSh {cart.total.toLocaleString()}
-                  </strong>
-                </p>
-              </div>
-
-              <Button
-                onClick={handleTillCheckout}
-                disabled={processing}
-                className="w-full bg-brand-mustard text-brand-blue hover:bg-brand-mustard-dark font-bold rounded-xl h-12 text-base"
-              >
-                {processing ? "Processing..." : "I Have Paid — Place Order"}
               </Button>
             </CardContent>
           </Card>

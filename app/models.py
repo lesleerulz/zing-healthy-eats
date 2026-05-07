@@ -156,6 +156,7 @@ class Order(db.Model):
     phone_number = db.Column(db.String(15), nullable=True)
     mpesa_receipt_number = db.Column(db.String(20), nullable=True)
     checkout_request_id = db.Column(db.String(50), nullable=True)
+    paystack_reference = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(20), default="Pending")  # Pending, Paid, Failed
     # Assigned delivery driver.
     driver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)

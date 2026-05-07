@@ -59,6 +59,7 @@ export interface Order {
   created_at: string | null;
   phone_number: string | null;
   mpesa_receipt_number: string | null;
+  paystack_reference: string | null;
   status: string;
   driver_id: number | null;
   delivery_lat: number | null;

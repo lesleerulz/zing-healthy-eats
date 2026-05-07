@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Order } from "@/lib/types";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 function statusConfig(status: string) {
   switch (status) {
@@ -30,8 +31,17 @@ function statusConfig(status: string) {
 }
 
 export default function OrdersPage() {
-  const { user } = useAuth();
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8 max-w-3xl space-y-4"><Skeleton className="h-32 rounded-xl" /></div>}>
+      <OrdersContent />
+    </Suspense>
+  );
+}
+
+function OrdersContent() {
+  const { user, refreshCart } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,11 +50,39 @@ export default function OrdersPage() {
       router.push("/login");
       return;
     }
-    fetchApi<Order[]>("/api/orders")
-      .then(setOrders)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user, router]);
+
+    const verifyPaystack = async () => {
+      const reference = searchParams.get("reference");
+      if (reference) {
+        try {
+          toast.loading("Verifying payment...", { id: "verify-paystack" });
+          const result = await fetchApi<{ status: string }>(`/api/checkout/paystack/verify/${reference}`);
+          if (result.status === "Paid") {
+            toast.success("Payment verified successfully!", { id: "verify-paystack" });
+            refreshCart();
+          } else {
+            toast.error("Payment verification failed.", { id: "verify-paystack" });
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error("An error occurred during verification.", { id: "verify-paystack" });
+        }
+      }
+    };
+
+    const fetchOrders = async () => {
+      try {
+        const data = await fetchApi<Order[]>("/api/orders");
+        setOrders(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyPaystack().then(fetchOrders);
+  }, [user, router, searchParams, refreshCart]);
 
   if (loading) {
     return (
@@ -112,11 +150,14 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="border-t mt-3 pt-3 flex justify-between items-center">
-                    <span className="text-sm text-slate-500">
+                    <div className="text-sm text-slate-500 space-y-0.5">
                       {order.mpesa_receipt_number && (
-                        <>Receipt: {order.mpesa_receipt_number}</>
+                        <p>Receipt: {order.mpesa_receipt_number}</p>
                       )}
-                    </span>
+                      {order.paystack_reference && (
+                        <p className="text-[10px]">Ref: {order.paystack_reference}</p>
+                      )}
+                    </div>
                     <span className="text-lg font-bold text-brand-blue">
                       KSh {order.total.toLocaleString()}
                     </span>

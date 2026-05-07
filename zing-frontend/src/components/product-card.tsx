@@ -46,7 +46,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Link href={`/catalog/${product.id}`}>
       <Card data-aos="zoom-in" className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-3xl">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-[#F9F9F9] m-2 rounded-2xl">
+        <div className="relative aspect-square overflow-hidden bg-[#F0EDE8] m-2 rounded-2xl">
           <Image
             src={productImageUrl(product.image)}
             alt={product.title}
@@ -58,9 +58,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {product.is_peoples_choice && (
-              <div className="bg-brand-burgundy text-white w-10 h-10 rounded-full flex items-center justify-center text-[8px] font-bold text-center leading-tight shadow-lg border border-white/20">
-                People's Choice
-              </div>
+              <Badge className="bg-zing-burgundy text-white text-[9px] font-bold rounded-full px-2.5 py-0.5 border-0 shadow-lg">
+                People&apos;s Choice
+              </Badge>
             )}
             {outOfStock && (
               <Badge variant="destructive" className="text-[10px] rounded-full">
@@ -70,8 +70,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
           {product.category_name && (
             <Badge
-              variant="secondary"
-              className="absolute top-2 right-2 text-[9px] bg-slate-100/80 backdrop-blur-sm text-slate-600 font-medium rounded-full border-0 px-2"
+              variant="outline"
+              className="absolute top-2 right-2 text-[9px] bg-white text-slate-600 font-medium rounded-full border-slate-300 px-2.5 py-0.5"
             >
               {product.category_name}
             </Badge>
@@ -80,7 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Content */}
         <CardContent className="p-4 pt-2">
-          <h3 className="font-bold text-sm text-brand-blue truncate group-hover:text-brand-burgundy transition-colors">
+          <h3 className="font-bold text-sm text-zing-navy truncate group-hover:text-zing-burgundy transition-colors">
             {product.title}
           </h3>
           <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
@@ -88,7 +88,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </p>
 
           <div className="flex items-center justify-between mt-4">
-            <span className="text-base font-bold text-brand-burgundy">
+            <span className="text-base font-bold text-zing-burgundy">
               KSh {product.price.toLocaleString()}
             </span>
 
@@ -96,11 +96,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               size="sm"
               onClick={handleAddToCart}
               disabled={outOfStock}
-              className="bg-brand-mustard text-brand-blue hover:bg-brand-mustard-dark font-bold rounded-xl shadow-md text-xs h-9 px-4 flex items-center gap-1 group/btn"
+              className="bg-zing-yellow text-zing-navy hover:bg-yellow-500 font-bold rounded-full shadow-md text-xs h-9 px-4 flex items-center gap-1.5 group/btn"
             >
-              <div className="bg-brand-blue/10 rounded-md p-0.5 group-hover/btn:bg-brand-blue/20 transition-colors">
-                <ShoppingBag className="h-3 w-3" />
-              </div>
+              <ShoppingBag strokeWidth={1.5} className="h-3.5 w-3.5" />
               {outOfStock ? "Sold Out" : "Add"}
             </Button>
           </div>

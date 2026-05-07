@@ -19,7 +19,7 @@ from app.api import api_bp
 socketio = SocketIO(async_mode='threading')
 
 from app.models import db, AboutContent, CartItem, CarouselImage, Category, FAQ, Order, OrderItem, Product, ProductImage, SocialLink, TeamMember, User, SiteSetting
-from app.mpesa import MpesaClient
+from app.paystack import PaystackClient
 from config import Config
 from flask_mail import Mail, Message
 
@@ -109,6 +109,45 @@ def create_app() -> Flask:
     
     # Store oauth in app extensions so we can access it in blueprints
     app.extensions['oauth'] = oauth
+
+    # -----------------------------------------------------------------------
+    # Missing Routes (Decoupled fallback)
+    # -----------------------------------------------------------------------
+
+    @app.route("/")
+    def index():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/about")
+    def about():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/catalog")
+    def catalog():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/peoples-choice")
+    def peoples_choice():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/cart")
+    def cart():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/orders/history")
+    @login_required
+    def order_history():
+        if current_user.is_driver:
+            return redirect(url_for("driver_dashboard"))
+        return redirect(url_for("dashboard"))
+
+    @app.route("/terms")
+    def terms_of_use():
+        return redirect(url_for("dashboard"))
+
+    @app.route("/legals")
+    def legals():
+        return redirect(url_for("dashboard"))
 
     # Load user by ID.
     @login_manager.user_loader
@@ -729,108 +768,72 @@ def create_app() -> Flask:
         except Exception as e:
             print(f"[Mail Error] Failed to send invoice email: {str(e)}")
 
-    @app.route("/payment/callback", methods=["POST"])
-    def mpesa_callback():
+    @app.route("/payment/paystack/webhook", methods=["POST"])
+    def paystack_webhook():
         """
-        Handle M-Pesa STK Push callback.
+        Handle Paystack webhook events.
         """
+        # In a real app, you should verify the signature!
+        # signature = request.headers.get('x-paystack-signature')
+        
         data = request.get_json()
-        print(f"[M-Pesa Callback] Received: {data}")
-        
-        if not data or "Body" not in data:
-            return {"result": "fail", "message": "Invalid data"}, 400
-            
-        stk_callback = data["Body"]["stkCallback"]
-        checkout_request_id = stk_callback["CheckoutRequestID"]
-        result_code = str(stk_callback["ResultCode"])
-        
-        order = Order.query.filter_by(checkout_request_id=checkout_request_id).first()
+        if not data:
+            return {"status": "error", "message": "No data received"}, 400
+
+        event = data.get("event")
+        payload = data.get("data", {})
+        reference = payload.get("reference")
+
+        if not reference:
+            return {"status": "error", "message": "No reference found"}, 400
+
+        order = Order.query.filter_by(paystack_reference=reference).first()
         if not order:
-            print(f"[M-Pesa Callback] Order not found for CheckoutRequestID: {checkout_request_id}")
-            return {"result": "fail", "message": "Order not found"}, 404
-            
-        if result_code == "0":
-            # Payment success
-            order.status = "Paid"
-            metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
-            for item in metadata:
-                if item["Name"] == "MpesaReceiptNumber":
-                    order.mpesa_receipt_number = item["Value"]
-            print(f"[M-Pesa Callback] Order #{order.id} marked as Paid")
-            send_order_invoice_email(order)
-        else:
-            # Payment failed or cancelled
+            return {"status": "error", "message": "Order not found"}, 404
+
+        if event == "charge.success":
+            if order.status != "Paid":
+                order.status = "Paid"
+                db.session.commit()
+                send_order_invoice_email(order)
+                print(f"[Paystack Webhook] Order #{order.id} marked as Paid")
+        elif event in ["charge.failed", "transfer.failed"]:
             order.status = "Failed"
-            print(f"[M-Pesa Callback] Order #{order.id} marked as Failed (ResultCode: {result_code})")
-            
-        db.session.commit()
-        return {"result": "success"}
+            db.session.commit()
+            print(f"[Paystack Webhook] Order #{order.id} marked as Failed")
+
+        return {"status": "success"}, 200
 
     @app.route("/payment/status/<int:order_id>")
     @login_required
     def check_payment_status(order_id):
         """
-        Check and update payment status for an order.
+        Check and update payment status for an order using Paystack.
         """
         order = Order.query.get_or_404(order_id)
         
-        # Ensure user owns the order
         if order.user_id != current_user.id and not current_user.is_admin:
             return {"status": "error", "message": "Access denied"}, 403
             
-        # If already paid or failed, just return status
         if order.status in ["Paid", "Failed", "Cancelled"]:
             return {"status": order.status}
             
-         # If pending, query M-Pesa
-        if order.status == "Pending" and order.checkout_request_id:
+        if order.status == "Pending" and order.paystack_reference:
             try:
-                base_url = "https://api.safaricom.co.ke" if app.config["MPESA_ENV"] == "production" else "https://sandbox.safaricom.co.ke"
-                mpesa = MpesaClient(
-                    consumer_key=app.config["MPESA_CONSUMER_KEY"],
-                    consumer_secret=app.config["MPESA_CONSUMER_SECRET"],
-                    shortcode=app.config["MPESA_SHORTCODE"],
-                    passkey=app.config["MPESA_PASSKEY"],
-                    transaction_type=app.config["MPESA_TRANSACTION_TYPE"],
-                    base_url=base_url
-                )
+                paystack = PaystackClient(secret_key=app.config["PAYSTACK_SECRET_KEY"])
+                response = paystack.verify_transaction(order.paystack_reference)
                 
-                response = mpesa.query_transaction_status(order.checkout_request_id)
-                print(f"[M-Pesa Status Query] Order #{order.id}: {response}")
-                
-                if "ResultCode" in response:
-                    result_code = str(response["ResultCode"])
-                    
-                    if result_code == "0":
-                        order.status = "Paid"
-                        # Try to extract receipt number from metadata
-                        if "CallbackMetadata" in response:
-                            try:
-                                for item in response["CallbackMetadata"]["Item"]:
-                                    if item["Name"] == "MpesaReceiptNumber":
-                                        order.mpesa_receipt_number = item["Value"]
-                            except (KeyError, TypeError):
-                                pass
-                        send_order_invoice_email(order)
-                    elif result_code == "1032":
-                        order.status = "Cancelled"
-                    elif result_code == "1":
-                        # Still processing — leave as Pending
-                        pass
-                    else:
-                        order.status = "Failed"
-                         
+                if response.get("status") and response["data"]["status"] == "success":
+                    order.status = "Paid"
                     db.session.commit()
-                    
-                # If errorCode is present, it might still be processing, so we leave as Pending
-                    
+                    send_order_invoice_email(order)
+                elif response.get("status") and response["data"]["status"] in ["failed", "reversed"]:
+                    order.status = "Failed"
+                    db.session.commit()
             except Exception as e:
-                # Log error but return current status
-                print(f"[M-Pesa Status Query] Error for Order #{order.id}: {e}")
-                pass
+                print(f"[Order Status Query] Error for Order #{order.id}: {e}")
                 
         return {"status": order.status}
-
 
     @app.route("/dashboard/update-about-hero", methods=["POST"])
     @login_required

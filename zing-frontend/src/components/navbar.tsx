@@ -94,7 +94,7 @@ export default function Navbar() {
           {/* Desktop Search & Icons */}
           <div className="hidden lg:flex items-center gap-6 flex-1 justify-end">
             <form onSubmit={handleSearch} className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+              <Search strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
               <Input
                 type="search"
                 placeholder="Search products..."
@@ -105,10 +105,12 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center gap-4">
-              <Link href="/cart" className="relative group p-2 rounded-full hover:bg-white/5 transition-colors">
-                <ShoppingBag className="h-6 w-6 text-brand-mustard group-hover:scale-110 transition-transform" />
+              <Link href="/cart" className="relative group transition-transform hover:scale-105">
+                <div className="bg-zing-yellow text-zing-navy rounded-md p-2 relative">
+                  <ShoppingBag strokeWidth={1.5} className="h-5 w-5" />
+                </div>
                 {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-brand-burgundy text-white text-[10px] rounded-full border-2 border-brand-blue">
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full border-2 border-zing-navy">
                     {cartCount}
                   </Badge>
                 )}
@@ -120,7 +122,7 @@ export default function Navbar() {
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className="p-2 rounded-full hover:bg-white/5 transition-colors group"
                   >
-                    <User className="h-6 w-6 text-brand-mustard group-hover:scale-110 transition-transform" />
+                    <User strokeWidth={1.5} className="h-6 w-6 text-zing-yellow group-hover:scale-110 transition-transform" />
                   </button>
 
                   {dropdownOpen && (
@@ -152,7 +154,7 @@ export default function Navbar() {
                 </div>
               ) : (
                 <Link href="/login" className="p-2 rounded-full hover:bg-white/5 transition-colors group">
-                  <User className="h-6 w-6 text-brand-mustard group-hover:scale-110 transition-transform" />
+                  <User strokeWidth={1.5} className="h-6 w-6 text-zing-yellow group-hover:scale-110 transition-transform" />
                 </Link>
               )}
             </div>
