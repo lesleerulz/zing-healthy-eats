@@ -14,7 +14,7 @@ interface AuthContextType {
   cart: CartData | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
   refreshCart: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     setToken(data.token);
     setUser(data.user);
+    return data;
   };
 
   const logout = () => {

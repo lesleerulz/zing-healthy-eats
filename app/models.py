@@ -164,6 +164,10 @@ class Order(db.Model):
     # Delivery Coordinates (Lat, Lng)
     delivery_lat = db.Column(db.Float, nullable=True)
     delivery_lng = db.Column(db.Float, nullable=True)
+    # Delivery Details
+    delivery_type = db.Column(db.String(20), default="delivery") # "delivery" or "pickup"
+    delivery_address = db.Column(db.String(255), nullable=True)
+    delivery_fee = db.Column(db.Float, default=0.0)
     # Relationship to associated order items.
     items = db.relationship("OrderItem", backref="order", lazy=True)
 
@@ -178,8 +182,11 @@ class Order(db.Model):
             "driver_id": self.driver_id,
             "delivery_lat": self.delivery_lat,
             "delivery_lng": self.delivery_lng,
+            "delivery_type": self.delivery_type,
+            "delivery_address": self.delivery_address,
+            "delivery_fee": self.delivery_fee,
             "items": [item.to_dict() for item in self.items],
-            "total": sum(item.subtotal for item in self.items),
+            "total": sum(item.subtotal for item in self.items) + (self.delivery_fee or 0),
         }
 
 

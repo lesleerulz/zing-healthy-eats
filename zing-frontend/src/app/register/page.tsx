@@ -40,8 +40,8 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(username, email, password);
-      toast.success("Registration successful! Welcome to Zing!");
+      const response = await register(username, email, password);
+      toast.success(response.message || "Registration successful! Welcome to Zing!");
       router.push("/");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");

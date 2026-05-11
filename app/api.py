@@ -8,6 +8,8 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
+import math
+
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user
 from sqlalchemy import func, or_
@@ -68,6 +70,9 @@ def token_required(f):
     return decorated
 
 
+from app.auth import auth_bp, send_verification_email
+
+
 # ---------------------------------------------------------------------------
 # Auth Endpoints
 # ---------------------------------------------------------------------------
@@ -94,8 +99,17 @@ def api_register():
     db.session.add(user)
     db.session.commit()
 
+    # Try to send verification email
+    message = "Registration successful."
+    try:
+        send_verification_email(user)
+        message += " A verification email has been sent to your inbox."
+    except Exception as e:
+        current_app.logger.error(f"Failed to send verification email to {email}: {e}")
+        message += " However, we couldn't send a verification email at this time."
+
     token = create_token(user.id)
-    return jsonify({"token": token, "user": user.to_dict()}), 201
+    return jsonify({"token": token, "user": user.to_dict(), "message": message}), 201
 
 
 @api_bp.route("/auth/login", methods=["POST"])
@@ -117,6 +131,22 @@ def api_login():
 
     token = create_token(user.id)
     return jsonify({"token": token, "user": user.to_dict()})
+
+
+@api_bp.route("/auth/verify/resend", methods=["POST"])
+@token_required
+def api_resend_verification():
+    """Resend verification email to the current user."""
+    user = request.api_user
+    if user.is_verified:
+        return jsonify({"message": "Account is already verified."}), 200
+
+    try:
+        send_verification_email(user)
+        return jsonify({"message": "Verification email sent."})
+    except Exception as e:
+        current_app.logger.error(f"Failed to resend verification email to {user.email}: {e}")
+        return jsonify({"error": "Failed to send verification email."}), 500
 
 
 @api_bp.route("/auth/me", methods=["GET"])
@@ -409,16 +439,71 @@ def api_remove_from_cart(product_id):
 # Checkout Endpoints
 # ---------------------------------------------------------------------------
 
+def calculate_delivery_fee(delivery_lat, delivery_lng):
+    """Calculate distance using Haversine formula and return fee."""
+    try:
+        lat1 = float(current_app.config.get("STORE_LAT", -1.2921))
+        lon1 = float(current_app.config.get("STORE_LNG", 36.8219))
+        lat2 = float(delivery_lat)
+        lon2 = float(delivery_lng)
+
+        R = 6371  # Radius of earth in km
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        distance = R * c
+
+        if distance <= 5:
+            return 250.0, distance
+        elif distance <= 10:
+            return 350.0, distance
+        else:
+            return 0.0, distance # Client will contact
+    except (ValueError, TypeError):
+        return 0.0, 0.0
+
+@api_bp.route("/checkout/calculate-delivery", methods=["POST"])
+@token_required
+def api_calculate_delivery():
+    data = request.get_json(silent=True) or {}
+    delivery_type = data.get("delivery_type", "delivery")
+    if delivery_type == "pickup":
+        return jsonify({"fee": 0, "distance": 0, "message": "Pickup is free."})
+    
+    delivery_lat = data.get("delivery_lat")
+    delivery_lng = data.get("delivery_lng")
+
+    if not delivery_lat or not delivery_lng:
+        return jsonify({"fee": 0, "distance": 0, "message": "Location required for delivery."})
+
+    fee, distance = calculate_delivery_fee(delivery_lat, delivery_lng)
+    
+    message = ""
+    if distance > 10:
+        message = "You are outside our standard delivery zone. We will contact you to arrange delivery and confirm the fee."
+    else:
+        message = f"Delivery fee is KSh {fee} for {distance:.1f} km."
+
+    return jsonify({"fee": fee, "distance": distance, "message": message})
+
+
 @api_bp.route("/checkout/mpesa", methods=["POST"])
 @token_required
 def api_checkout_mpesa():
     """Initiate M-Pesa checkout via Paystack Charge API."""
     user = request.api_user
+
+    if not user.is_verified:
+        return jsonify({"error": "Please verify your email address before placing an order."}), 403
+
     data = request.get_json(silent=True) or {}
     phone_number = (data.get("phone_number") or "").strip()
     save_phone = data.get("save_phone", False)
     delivery_lat = data.get("delivery_lat")
     delivery_lng = data.get("delivery_lng")
+    delivery_type = data.get("delivery_type", "delivery")
+    delivery_address = data.get("delivery_address")
 
     if not phone_number:
         return jsonify({"error": "Phone number is required."}), 400
@@ -439,10 +524,23 @@ def api_checkout_mpesa():
         return jsonify({"error": "Cart is empty."}), 400
 
     amount = sum(item.product.price * item.quantity for item in items)
-    paystack_amount = int(amount * 100)
+    
+    delivery_fee = 0.0
+    if delivery_type == "delivery" and delivery_lat and delivery_lng:
+        delivery_fee, _ = calculate_delivery_fee(delivery_lat, delivery_lng)
+    
+    total_amount = amount + delivery_fee
+    paystack_amount = int(total_amount * 100)
 
     # Create Order.
-    order = Order(user_id=user.id, phone_number=phone_number, status="Pending")
+    order = Order(
+        user_id=user.id, 
+        phone_number=phone_number, 
+        status="Pending",
+        delivery_type=delivery_type,
+        delivery_address=delivery_address,
+        delivery_fee=delivery_fee
+    )
     if delivery_lat and delivery_lng:
         try:
             order.delivery_lat = float(delivery_lat)
@@ -511,21 +609,39 @@ def api_checkout_mpesa():
 def api_checkout_paystack_initialize():
     """Initialize Paystack transaction."""
     user = request.api_user
+
+    if not user.is_verified:
+        return jsonify({"error": "Please verify your email address before placing an order."}), 403
+
     data = request.get_json(silent=True) or {}
     delivery_lat = data.get("delivery_lat")
     delivery_lng = data.get("delivery_lng")
+    delivery_type = data.get("delivery_type", "delivery")
+    delivery_address = data.get("delivery_address")
 
     items = CartItem.query.filter_by(user_id=user.id).all()
     if not items:
         return jsonify({"error": "Cart is empty."}), 400
 
     amount = sum(item.product.price * item.quantity for item in items)
+    
+    delivery_fee = 0.0
+    if delivery_type == "delivery" and delivery_lat and delivery_lng:
+        delivery_fee, _ = calculate_delivery_fee(delivery_lat, delivery_lng)
+        
+    total_amount = amount + delivery_fee
     # Paystack amount is in kobo/cents. For KES, it's also cents? 
     # Actually Paystack KES uses cents (multiply by 100).
-    paystack_amount = int(amount * 100)
+    paystack_amount = int(total_amount * 100)
 
     # Create Order.
-    order = Order(user_id=user.id, status="Pending")
+    order = Order(
+        user_id=user.id, 
+        status="Pending",
+        delivery_type=delivery_type,
+        delivery_address=delivery_address,
+        delivery_fee=delivery_fee
+    )
     if delivery_lat and delivery_lng:
         try:
             order.delivery_lat = float(delivery_lat)

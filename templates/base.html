@@ -84,7 +84,7 @@
 		<nav class="navbar navbar-expand-lg navbar-dark bg-zing-blue shadow-sm">
 			<div class="container">
 				<!-- Brand -->
-				<a class="m-0 py-2 navbar-brand" href="{{ url_for('index') }}">
+				<a class="m-0 py-2 navbar-brand" href="{{ frontend_url }}">
 					<img src="{{ url_for('static', filename='images/logo_zing.webp') }}" alt="Zing Healthy Treats"
 						height="90" fetchpriority="high">
 				</a>
@@ -108,7 +108,7 @@
 						<ul class="dropdown-menu dropdown-menu-end">
 							<li><a class="dropdown-item"
 									href="{{ url_for('auth.profile') }}">{{current_user.username}}</a></li>
-							<li><a class="dropdown-item" href="{{ url_for('order_history') }}">Orders</a></li>
+							<li><a class="dropdown-item" href="{{ frontend_url }}/orders">Orders</a></li>
 
 							<hr class="dropdown-divider">
 
@@ -123,14 +123,14 @@
 					<!-- Left-aligned static links -->
 					<ul class="navbar-nav align-items-center">
 						<li class="nav-item">
-							<a class="nav-link" href="{{ url_for('index') }}">Home</a>
+							<a class="nav-link" href="{{ frontend_url }}">Home</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="{{ url_for('about') }}">About</a>
+							<a class="nav-link" href="{{ frontend_url }}/about">About</a>
 						</li>
 
 						<li class="nav-item">
-							<a class="nav-link" href="{{ url_for('catalog') }}">Catalog</a>
+							<a class="nav-link" href="{{ frontend_url }}/catalog">Catalog</a>
 						</li>
 						{% if sale_page_enabled %}
 						<li class="nav-item">
@@ -189,7 +189,7 @@
 						<!-- Cart button (desktop only) -->
 						<li class="nav-item me-3">
 							<a class="d-none d-lg-flex btn btn-sm btn-success position-relative"
-								href="{{ url_for('cart') }}">
+								href="{{ frontend_url }}/cart">
 								<i class="bi bi-bag-fill"></i>
 
 								<span id="cart-quantity"
@@ -213,7 +213,7 @@
 										href="{{ url_for('auth.profile') }}">{{current_user.username}}</a>
 								</li>
 								<li>
-									<a class="dropdown-item" href="{{ url_for('order_history') }}">Orders</a>
+									<a class="dropdown-item" href="{{ frontend_url }}/orders">Orders</a>
 								</li>
 
 								<hr class="dropdown-divider">
@@ -229,7 +229,7 @@
 						<!-- Cart button (desktop only) -->
 						<li class="nav-item me-3">
 							<a class="d-none d-lg-flex btn btn-sm btn-success position-relative"
-								href="{{ url_for('cart') }}">
+								href="{{ frontend_url }}/cart">
 								<i class="bi bi-bag-fill"></i>
 
 								<span id="cart-quantity"
@@ -241,7 +241,7 @@
 
 						<!-- Cart link (mobile only) -->
 						<li class="nav-item d-lg-none">
-							<a class="nav-link" href="{{ url_for('cart') }}">Cart</a>
+							<a class="nav-link" href="{{ frontend_url }}/cart">Cart</a>
 						</li>
 
 						<!-- Avatar dropdown menu (desktop only) -->
@@ -260,7 +260,7 @@
 								</li>
 
 								<li>
-									<a class="dropdown-item" href="{{ url_for('order_history') }}">Orders</a>
+									<a class="dropdown-item" href="{{ frontend_url }}/orders">Orders</a>
 								</li>
 
 								<hr class="dropdown-divider">
@@ -343,7 +343,7 @@
 					<ul class="nav flex-column">
 						<li>
 							<a class="link-light fw-lighter link-underline link-underline-opacity-0 d-flex align-items-center gap-2"
-								href="{{ url_for('index') }}" id="nav-home-link">
+								href="{{ frontend_url }}" id="nav-home-link">
 								<div id="lottie-home" style="width: 20px; height: 20px;"></div>
 								Home
 							</a>
@@ -351,17 +351,17 @@
 
 						<li>
 							<a class="link-light fw-lighter link-underline link-underline-opacity-0"
-								href="{{ url_for('about') }}">About</a>
+								href="{{ frontend_url }}/about">About</a>
 						</li>
 
 						<li>
 							<a class="link-light fw-lighter link-underline link-underline-opacity-0"
-								href="{{ url_for('catalog') }}">Catalog</a>
+								href="{{ frontend_url }}/catalog">Catalog</a>
 						</li>
 
 						<li>
 							<a class="link-light fw-lighter link-underline link-underline-opacity-0"
-								href="{{ url_for('cart') }}">Cart</a>
+								href="{{ frontend_url }}/cart">Cart</a>
 						</li>
 					</ul>
 				</div>
@@ -392,10 +392,10 @@
 						Zing Healthy Treats</span>
 					<span class="mx-2 my-0 p-0 text-light opacity-50">|</span>
 					<a class="fs-tiny fs-lg-6 link-light fw-lighter link-underline link-underline-opacity-0"
-						href="{{ url_for('terms_of_use') }}">Terms of Use</a>
+						href="{{ frontend_url }}/terms">Terms of Use</a>
 					<span class="mx-2 my-0 p-0 text-light opacity-50">|</span>
 					<a class="fs-tiny fs-lg-6 link-light fw-lighter link-underline link-underline-opacity-0"
-						href="{{ url_for('legals') }}">Legals</a>
+						href="{{ frontend_url }}/legals">Legals</a>
 				</div>
 
 				<!-- Accepted payment methods -->

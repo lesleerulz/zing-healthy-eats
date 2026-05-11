@@ -67,15 +67,29 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        flash("Registration successful. You can now log in.", "success")
+        # Try to send verification email.
+        try:
+            send_verification_email(user)
+            flash("Registration successful. A verification email has been sent to your inbox.", "success")
+        except Exception as e:
+            current_app.logger.error(f"Failed to send verification email to {email}: {e}")
+            flash("Registration successful, but we couldn't send a verification email. Please contact support.", "warning")
+
         return redirect(url_for("auth.login"))
 
     # Render register page.
     return render_template("auth/register.html", title="Register")
 
 def send_verification_email(user):
-    token = get_reset_token(user) # We can reuse the same token generator logic
+    token = get_reset_token(user)
     mail = current_app.extensions['mail']
+    
+    verification_url = url_for('auth.verify_email', token=token, _external=True)
+    
+    if current_app.debug:
+        print(f"DEBUG: Verification URL for {user.email}: {verification_url}")
+        current_app.logger.info(f"Verification URL for {user.email}: {verification_url}")
+
     msg = Message('Verify Your Account',
                   sender=current_app.config['MAIL_USERNAME'],
                   recipients=[user.email])

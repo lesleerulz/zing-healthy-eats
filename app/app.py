@@ -116,38 +116,38 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index():
-        return redirect(url_for("dashboard"))
+        return redirect(app.config["FRONTEND_URL"])
 
     @app.route("/about")
     def about():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/about")
 
     @app.route("/catalog")
     def catalog():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/catalog")
 
     @app.route("/peoples-choice")
     def peoples_choice():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/catalog") # Frontend might have it under catalog
 
     @app.route("/cart")
     def cart():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/cart")
 
     @app.route("/orders/history")
     @login_required
     def order_history():
         if current_user.is_driver:
             return redirect(url_for("driver_dashboard"))
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/orders")
 
     @app.route("/terms")
     def terms_of_use():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/terms") # Assuming these exist on frontend
 
     @app.route("/legals")
     def legals():
-        return redirect(url_for("dashboard"))
+        return redirect(f"{app.config['FRONTEND_URL']}/legals")
 
     # Load user by ID.
     @login_manager.user_loader
@@ -179,6 +179,7 @@ def create_app() -> Flask:
             "sale_page_enabled": (sale_enabled_setting.value == "true") if sale_enabled_setting else True,
             "sale_page_title": sale_title_setting.value if sale_title_setting else "People's Choice",
             "support_phone": support_phone_setting.value if support_phone_setting else None,
+            "frontend_url": app.config["FRONTEND_URL"],
         }
 
     

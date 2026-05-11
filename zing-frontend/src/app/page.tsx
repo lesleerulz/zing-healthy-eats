@@ -94,7 +94,7 @@ export default function HomePage() {
   return (
     <div className="space-y-16 pb-16 bg-zing-cream/50">
       {/* ── Hero Section ── */}
-      <section className="relative bg-zing-cream bg-noise pt-16 pb-24 md:pt-24 md:pb-32">
+      <section className="hero-section relative bg-zing-cream bg-noise pt-16 pb-24 md:pt-24 md:pb-32">
         {/* Decorative Leaf (Top Left) */}
         <div className="absolute top-10 left-10 opacity-10 rotate-12 pointer-events-none hidden lg:block">
           <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -104,7 +104,7 @@ export default function HomePage() {
           </svg>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="hero-content container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
             <div data-aos="fade-right">

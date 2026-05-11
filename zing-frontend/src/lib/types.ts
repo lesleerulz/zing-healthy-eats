@@ -64,6 +64,9 @@ export interface Order {
   driver_id: number | null;
   delivery_lat: number | null;
   delivery_lng: number | null;
+  delivery_type?: string;
+  delivery_address?: string | null;
+  delivery_fee?: number;
   items: OrderItem[];
   total: number;
 }
@@ -133,4 +136,5 @@ export interface PeoplesChoice {
 export interface AuthResponse {
   token: string;
   user: User;
+  message?: string;
 }

@@ -49,3 +49,9 @@ class Config:
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
+    # Frontend Configuration
+    FRONTEND_URL = os.environ.get("FRONTEND_URL") or "http://localhost:3000"
+
+    # Store Location (Default: Nairobi CBD for distance calculation)
+    STORE_LAT = float(os.environ.get("STORE_LAT", -1.2921))
+    STORE_LNG = float(os.environ.get("STORE_LNG", 36.8219))
