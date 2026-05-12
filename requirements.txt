@@ -28,3 +28,4 @@ flask-migrate
 Flask-SocketIO==5.3.6
 eventlet==0.35.2
 PyJWT
+weasyprint

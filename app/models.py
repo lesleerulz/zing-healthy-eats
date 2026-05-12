@@ -31,6 +31,10 @@ class User(UserMixin, db.Model):
     saved_phone = db.Column(db.String(15), nullable=True)
     # Flag indicating if the user's email address has been verified.
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    # 6-digit OTP for email verification.
+    verification_code = db.Column(db.String(6), nullable=True)
+    # Expiry timestamp for the verification OTP.
+    verification_code_expires_at = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, password: str) -> None:
         """

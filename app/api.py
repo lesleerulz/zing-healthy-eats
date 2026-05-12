@@ -71,23 +71,39 @@ def token_required(f):
 
 
 from flask_mail import Message
-from app.tokens import get_reset_token, verify_reset_token
+import random
+
+def generate_otp() -> str:
+    """Generate a random 6-digit OTP code."""
+    return str(random.randint(100000, 999999))
 
 def api_send_verification_email(user):
-    token = get_reset_token(user)
-    mail = current_app.extensions['mail']
-    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
-    
-    verification_url = f"{frontend_url}/verify-email?token={token}"
-    
-    msg = Message('Verify Your Account',
-                  sender=current_app.config['MAIL_USERNAME'],
-                  recipients=[user.email])
-    msg.body = f'''To verify your Zing Healthy Eats account, visit the following link:
-{verification_url}
+    """Generate a fresh OTP, save it to the user, and send it via email."""
+    from datetime import datetime, timedelta, timezone
+    otp = generate_otp()
+    user.verification_code = otp
+    user.verification_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    db.session.commit()
 
-If you did not sign up for this account, please ignore this email.
-'''
+    mail = current_app.extensions['mail']
+    msg = Message(
+        'Your Zing Healthy Eats Verification Code',
+        sender=current_app.config['MAIL_USERNAME'],
+        recipients=[user.email]
+    )
+    msg.html = f'''
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 12px; background: #fff;">
+        <div style="text-align:center; margin-bottom: 24px;">
+            <span style="font-size:28px; font-weight:bold; color:#E1AD01;">Zing Healthy Eats</span>
+        </div>
+        <h2 style="color:#1a3c5e; text-align:center; margin-bottom:8px;">Verify Your Email</h2>
+        <p style="color:#555; text-align:center; margin-bottom:28px;">Use the code below to verify your account. It expires in <strong>10 minutes</strong>.</p>
+        <div style="background:#f4f8ff; border-radius:12px; padding:24px; text-align:center; margin-bottom:28px;">
+            <span style="font-size:48px; font-weight:bold; letter-spacing:12px; color:#1a3c5e;">{otp}</span>
+        </div>
+        <p style="color:#999; font-size:13px; text-align:center;">If you did not sign up for Zing Healthy Eats, please ignore this email.</p>
+    </div>
+    '''
     mail.send(msg)
 
 
@@ -154,37 +170,107 @@ def api_login():
 @api_bp.route("/auth/verify/resend", methods=["POST"])
 @token_required
 def api_resend_verification():
-    """Resend verification email to the current user."""
+    """Resend OTP verification email to the current user."""
     user = request.api_user
     if user.is_verified:
         return jsonify({"message": "Account is already verified."}), 200
 
     try:
         api_send_verification_email(user)
-        return jsonify({"message": "Verification email sent."})
+        return jsonify({"message": "A new verification code has been sent to your email."})
     except Exception as e:
-        current_app.logger.error(f"Failed to resend verification email to {user.email}: {e}")
-        return jsonify({"error": "Failed to send verification email."}), 500
+        current_app.logger.error(f"Failed to resend verification code to {user.email}: {e}")
+        return jsonify({"error": "Failed to send verification code."}), 500
 
 
 @api_bp.route("/auth/verify-email", methods=["POST"])
 def api_verify_email():
-    """Verify user email via token from frontend."""
+    """Verify user email via 6-digit OTP code."""
+    from datetime import datetime, timezone
     data = request.get_json(silent=True) or {}
-    token = data.get("token")
-    if not token:
-        return jsonify({"error": "Verification token is required."}), 400
-        
-    user = verify_reset_token(token)
-    if user is None:
-        return jsonify({"error": "The verification link is invalid or has expired."}), 400
-        
+    email = (data.get("email") or "").strip()
+    code = (data.get("code") or "").strip()
+
+    if not email or not code:
+        return jsonify({"error": "Email and verification code are required."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "Invalid code or email."}), 400
+
     if user.is_verified:
         return jsonify({"message": "Account is already verified."}), 200
-        
+
+    if user.verification_code != code:
+        return jsonify({"error": "Incorrect verification code."}), 400
+
+    if not user.verification_code_expires_at:
+        return jsonify({"error": "No verification code found. Please request a new one."}), 400
+
+    expires_at = user.verification_code_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expires_at:
+        return jsonify({"error": "Verification code has expired. Please request a new one."}), 400
+
     user.is_verified = True
+    user.verification_code = None
+    user.verification_code_expires_at = None
     db.session.commit()
     return jsonify({"message": "Your account has been successfully verified!"}), 200
+
+
+@api_bp.route("/auth/google/login", methods=["GET"])
+def api_google_login():
+    """Redirect user to Google OAuth consent screen."""
+    from flask import redirect as flask_redirect
+    oauth = current_app.extensions.get("oauth")
+    if not oauth or not current_app.config.get("GOOGLE_CLIENT_ID"):
+        return jsonify({"error": "Google login is not configured."}), 503
+    callback_uri = request.host_url.rstrip("/") + "/api/auth/google/callback"
+    return oauth.google.authorize_redirect(callback_uri)
+
+
+@api_bp.route("/auth/google/callback", methods=["GET"])
+def api_google_callback():
+    """Handle Google OAuth callback, create/find user, return JWT to frontend."""
+    import secrets
+    from flask import redirect as flask_redirect
+    oauth = current_app.extensions.get("oauth")
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+
+    error = request.args.get("error")
+    if error:
+        return flask_redirect(f"{frontend_url}/login?error=google_denied")
+
+    try:
+        oauth.google.authorize_access_token()
+        user_info = oauth.google.userinfo()
+    except Exception as e:
+        current_app.logger.error(f"Google OAuth error: {e}")
+        return flask_redirect(f"{frontend_url}/login?error=google_failed")
+
+    email = user_info.get("email")
+    if not email:
+        return flask_redirect(f"{frontend_url}/login?error=no_email")
+
+    # Find or create user
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        username = user_info.get("name") or email.split("@")[0]
+        if User.query.filter_by(username=username).first():
+            username = f"{username}_{secrets.token_hex(3)}"
+        user = User(username=username, email=email, is_verified=True)
+        user.set_password(secrets.token_urlsafe(16))
+        db.session.add(user)
+        db.session.commit()
+    elif not user.is_verified:
+        user.is_verified = True
+        db.session.commit()
+
+    # Issue JWT and redirect to frontend with it
+    jwt_token = create_token(user.id)
+    return flask_redirect(f"{frontend_url}/login?token={jwt_token}&via=google")
 
 
 @api_bp.route("/auth/me", methods=["GET"])
@@ -714,11 +800,35 @@ def api_checkout_paystack_initialize():
         # Paystack reference can be custom.
         reference = f"ZING-{order.id}-{int(datetime.now().timestamp())}"
         
+        metadata = {
+            "custom_fields": [
+                {
+                    "display_name": "Delivery Type",
+                    "variable_name": "delivery_type",
+                    "value": delivery_type.capitalize()
+                }
+            ]
+        }
+        
+        if delivery_type == "delivery" and delivery_address:
+            metadata["custom_fields"].append({
+                "display_name": "Delivery Address",
+                "variable_name": "delivery_address",
+                "value": delivery_address
+            })
+        elif delivery_type == "pickup":
+            metadata["custom_fields"].append({
+                "display_name": "Pickup Location",
+                "variable_name": "pickup_location",
+                "value": "Nairobi CBD Station"
+            })
+
         response = paystack.initialize_transaction(
             email=user.email,
             amount=paystack_amount,
             callback_url=app.config["PAYSTACK_CALLBACK_URL"],
-            reference=reference
+            reference=reference,
+            metadata=metadata
         )
 
         if response.get("status"):

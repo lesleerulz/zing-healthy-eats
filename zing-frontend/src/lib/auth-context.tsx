@@ -14,6 +14,7 @@ interface AuthContextType {
   cart: CartData | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
   refreshCart: () => Promise<void>;
@@ -84,6 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
+  const loginWithToken = async (token: string) => {
+    setToken(token);
+    try {
+      const data = await fetchApi<User>("/api/auth/me");
+      setUser(data);
+    } catch {
+      removeToken();
+      setUser(null);
+    }
+  };
+
   const register = async (username: string, email: string, password: string) => {
     const data = await fetchApi<AuthResponse>("/api/auth/register", {
       method: "POST",
@@ -102,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, cart, loading, login, register, logout, refreshCart, refreshUser }}
+      value={{ user, cart, loading, login, loginWithToken, register, logout, refreshCart, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

@@ -88,6 +88,10 @@ export default function Footer() {
               Terms of Use
             </Link>
             <span className="opacity-50">|</span>
+            <Link href="/privacy-policy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="opacity-50">|</span>
             <Link href="/legals" className="hover:text-white transition-colors">
               Legals
             </Link>

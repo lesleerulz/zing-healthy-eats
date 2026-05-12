@@ -756,9 +756,18 @@ def create_app() -> Flask:
             msg = Message(
                 subject=f"Order Invoice - #{order.id} Zing Healthy Eats",
                 sender=current_app.config["MAIL_USERNAME"],
-                recipients=[user.email, "sarahmogoi@gmail.com", "lesleenyanducha@gmail.com"]
+                recipients=[user.email, "sarahmogoi@gmail.com", "zingtreats@gmail.com"]
             )
             msg.html = html_body
+            
+            try:
+                from weasyprint import HTML
+                pdf_bytes = HTML(string=html_body).write_pdf()
+                msg.attach(f"invoice_order_{order.id}.pdf", "application/pdf", pdf_bytes)
+            except ImportError:
+                print("[Mail Warning] WeasyPrint not installed. PDF invoice not attached.")
+            except Exception as pdf_e:
+                print(f"[Mail Warning] Failed to generate PDF invoice: {str(pdf_e)}")
             
             mail = current_app.extensions.get('mail')
             if mail:

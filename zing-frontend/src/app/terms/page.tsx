@@ -13,7 +13,9 @@ export default function TermsPage() {
         <h2>4. Delivery</h2>
         <p>Delivery timelines are estimates and may vary depending on location and availability.</p>
         <h2>5. Privacy</h2>
-        <p>We respect your privacy and handle your personal data in accordance with applicable data protection laws.</p>
+        <p>
+          We respect your privacy. Please review our full <a href="/privacy-policy" className="text-brand-mustard hover:underline">Privacy Policy</a> to understand how we handle your personal data.
+        </p>
       </div>
     </div>
   );
