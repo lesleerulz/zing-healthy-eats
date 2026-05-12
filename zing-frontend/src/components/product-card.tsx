@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { productImageUrl } from "@/lib/api";
@@ -18,6 +19,15 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { user, refreshCart } = useAuth();
+  const [saleTitle, setSaleTitle] = useState("People's Choice");
+
+  useEffect(() => {
+    fetchApi<{ sale_page_title?: string }>("/api/site-settings")
+      .then((settings) => {
+        if (settings.sale_page_title) setSaleTitle(settings.sale_page_title);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,7 +69,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {product.is_peoples_choice && (
               <Badge className="bg-zing-burgundy text-white text-[9px] font-bold rounded-full px-2.5 py-0.5 border-0 shadow-lg">
-                People&apos;s Choice
+                {saleTitle}
               </Badge>
             )}
             {outOfStock && (

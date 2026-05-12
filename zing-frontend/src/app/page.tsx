@@ -15,12 +15,20 @@ import { ChevronLeft, ChevronRight, Leaf, Flame, Heart, Gift } from "lucide-reac
 import AOS from "aos";
 import "aos/dist/aos.css";
 
+const textSets = [
+  { title: "Fuel Your", highlight: "Active Life.", desc: "Premium nutrition designed for those who move. Wholesome. Delicious. Always Zing." },
+  { title: "Nourish Your", highlight: "Body & Soul.", desc: "Carefully crafted meals to keep you energized. Fresh. Healthy. Unstoppable." },
+  { title: "Maximize Your", highlight: "Fitness Journey.", desc: "Scientifically backed meals to accelerate recovery and build lean muscle. Fuel your workout." },
+];
+
 export default function HomePage() {
   const [carousel, setCarousel] = useState<CarouselImage[]>([]);
   const heroTitleRef = useRef<HTMLHeadingElement>(null);
   const [featured, setFeatured] = useState<FeaturedProducts | null>(null);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const textContainerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,11 +51,26 @@ export default function HomePage() {
       });
   }, []);
 
-  // Auto-advance carousel.
+  // Auto-advance carousel and morph text.
   useEffect(() => {
     if (carousel.length <= 1) return;
     const interval = setInterval(() => {
+      // Start slide transition immediately
       setCurrentSlide((prev) => (prev + 1) % carousel.length);
+      
+      if (textContainerRef.current) {
+        gsap.to(textContainerRef.current, {
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.inOut",
+          onComplete: () => {
+            setCurrentTextIndex((prev) => (prev + 1) % textSets.length);
+            gsap.to(textContainerRef.current, { opacity: 1, duration: 0.5, ease: "power2.inOut" });
+          }
+        });
+      } else {
+        setCurrentTextIndex((prev) => (prev + 1) % textSets.length);
+      }
     }, 5000);
     return () => clearInterval(interval);
   }, [carousel.length]);
@@ -93,96 +116,72 @@ export default function HomePage() {
 
   return (
     <div className="space-y-16 pb-16 bg-zing-cream/50">
-      {/* ── Hero Section ── */}
-      <section className="hero-section relative bg-zing-cream bg-noise pt-16 pb-24 md:pt-24 md:pb-32">
-        {/* Decorative Leaf (Top Left) */}
-        <div className="absolute top-10 left-10 opacity-10 rotate-12 pointer-events-none hidden lg:block">
-          <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M40 160C40 160 60 100 120 80C180 60 160 40 160 40C160 40 140 60 80 120C20 180 40 160 40 160Z" stroke="currentColor" strokeWidth="2" className="text-brand-burgundy"/>
-            <path d="M60 140L80 120" stroke="currentColor" strokeWidth="2" className="text-brand-burgundy"/>
-            <path d="M80 120L100 100" stroke="currentColor" strokeWidth="2" className="text-brand-burgundy"/>
-          </svg>
+      {/* ── Full-Bleed Hero Section ── */}
+      <section className="hero-section relative min-h-[85vh] flex items-center overflow-hidden pt-16 pb-24 md:pt-24 md:pb-32">
+        {/* Carousel Background Layer */}
+        <div className="absolute inset-0 z-0">
+          {carousel.length > 0 ? (
+            carousel.map((img, idx) => (
+              <div
+                key={img.id}
+                className={`absolute inset-0 transition-opacity duration-1500 ease-in-out ${
+                  idx === currentSlide ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <div className="absolute inset-0 bg-black/30 z-10" /> {/* Overlay for readability */}
+                <Image
+                  src={carouselImageUrl(img.image_filename)}
+                  alt={`Health and lifestyle ${idx + 1}`}
+                  fill
+                  className="object-cover"
+                  priority={idx === 0}
+                  unoptimized
+                />
+              </div>
+            ))
+          ) : (
+            <div className="w-full h-full bg-zing-navy/20 animate-pulse" />
+          )}
         </div>
 
-        <div className="hero-content container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
-            <div data-aos="fade-right">
-              <h1 className="text-5xl md:text-7xl font-heading font-bold text-zing-navy leading-[1.1] mb-6">
-                Premium Nuts.<br />
-                <span className="italic text-zing-burgundy">Perfectly Roasted.</span>
+        <div className="hero-content container mx-auto px-4 relative z-20">
+          <div className="max-w-3xl" data-aos="fade-up">
+            <div ref={textContainerRef}>
+              <h1 ref={heroTitleRef} className="text-5xl md:text-8xl font-heading font-bold text-white leading-[1.1] mb-6 drop-shadow-lg">
+                {textSets[currentTextIndex].title} <br />
+                <span className="italic text-zing-yellow">{textSets[currentTextIndex].highlight}</span>
               </h1>
-              <p className="text-lg md:text-xl text-zing-burgundy mb-8 max-w-lg font-medium">
-                Wholesome. Delicious. Always Zing.
+              <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-xl font-medium drop-shadow-md">
+                {textSets[currentTextIndex].desc}
               </p>
+            </div>
+            <div className="flex flex-wrap gap-4">
               <Link href="/catalog">
-                <Button size="lg" className="bg-zing-yellow hover:bg-yellow-500 text-zing-navy shadow-[0_4px_14px_0_rgba(229,169,40,0.39)] font-bold px-8 py-7 text-lg rounded-full group transition-all">
-                  SHOP NOW
-                  <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <Button size="lg" className="bg-zing-yellow hover:bg-yellow-500 text-zing-navy shadow-xl font-bold px-10 py-8 text-xl rounded-full group transition-all">
+                  EXPLORE CATALOG
+                  <ChevronRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-            </div>
-
-            {/* Image / Carousel Wrapper */}
-            <div className="relative" data-aos="fade-left">
-              {/* Roasted Seal */}
-              <div className="absolute -bottom-6 -left-6 z-20 bg-white rounded-full p-4 shadow-xl border border-brand-mustard/20 animate-bounce-slow">
-                <div className="rounded-full border-2 border-dashed border-brand-mustard p-3 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-tighter text-brand-mustard">Roasted To</p>
-                  <p className="text-xs font-heading font-bold text-brand-burgundy">Perfection</p>
-                </div>
-              </div>
-
-              {/* Main Image Container */}
-              <div className="relative aspect-[4/3] w-full mt-8 lg:mt-0">
-                {carousel.length > 0 ? (
-                  carousel.map((img, idx) => (
-                    <div
-                      key={img.id}
-                      className={`absolute inset-0 transition-opacity duration-1000 ${
-                        idx === currentSlide ? "opacity-100" : "opacity-0"
-                      }`}
-                    >
-                      <Image
-                        src={carouselImageUrl(img.image_filename)}
-                        alt={`Premium nut selection ${idx + 1}`}
-                        fill
-                        className="object-contain"
-                        priority={idx === 0}
-                        unoptimized
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-slate-400">Loading premium treats...</p>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Decorative Leaf (Bottom Right) */}
-        <div className="absolute bottom-10 right-10 opacity-10 -rotate-45 pointer-events-none hidden lg:block">
-          <svg width="240" height="240" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M40 160C40 160 60 100 120 80C180 60 160 40 160 40C160 40 140 60 80 120C20 180 40 160 40 160Z" stroke="currentColor" strokeWidth="2" className="text-brand-burgundy"/>
-          </svg>
+        {/* Roasted Seal (Positioned relative to full hero) */}
+        <div className="absolute bottom-24 right-10 z-30 hidden lg:block animate-bounce-slow">
+          <div className="bg-white rounded-full p-4 shadow-2xl border border-brand-mustard/20">
+            <div className="rounded-full border-2 border-dashed border-brand-mustard p-3 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-tighter text-brand-mustard">Peak</p>
+              <p className="text-xs font-heading font-bold text-brand-burgundy">Performance</p>
+            </div>
+          </div>
         </div>
 
-        {/* Torn Paper Effect Bottom */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] translate-y-[1px]">
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(100%+1.3px)] h-[40px] md:h-[60px] fill-brand-cream/30 rotate-180">
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-1.11,1200,42.47V0Z" className="fill-brand-cream/30" opacity=".25"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5V0Z" className="fill-brand-cream/30" opacity=".5"></path>
-            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.41,5.29,2.31,10.57,4.59,15.89,6.78,44,18.08,88,33.94,136,33.94,29,0,57-4.94,83.91-15.11,102.34-38.64,134.42-30,195.2-12.79V0Z" className="fill-brand-cream"></path>
-          </svg>
-        </div>
-
-        {/* Torn Paper Divider */}
-        <div className="absolute -bottom-1 left-0 right-0 pointer-events-none z-10">
-          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="w-full h-[50px] md:h-[70px] drop-shadow-[0_-4px_6px_rgba(0,0,0,0.04)]" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,60 C12,52 18,68 36,54 C48,44 58,72 78,56 C92,45 102,70 120,52 C132,42 146,68 162,50 C174,40 188,66 204,48 C218,36 230,64 248,46 C262,34 276,62 294,44 C308,34 320,60 338,42 C352,32 366,58 384,40 C398,30 412,56 430,38 C444,28 458,54 476,36 C490,26 504,52 522,34 C536,24 550,50 568,32 C582,22 596,48 614,30 C628,20 642,46 660,28 C674,18 688,44 706,26 C720,16 734,42 752,24 C766,14 780,40 798,22 C812,12 826,38 844,20 C858,10 872,36 890,22 C904,14 918,40 936,26 C950,18 964,44 982,30 C996,22 1010,48 1028,34 C1042,26 1056,52 1074,38 C1088,30 1102,56 1120,42 C1134,34 1148,60 1166,46 C1180,38 1194,64 1212,50 C1226,42 1240,66 1258,52 C1272,44 1286,68 1304,54 C1318,46 1332,70 1350,56 C1364,48 1378,72 1396,58 C1410,50 1424,68 1440,58 L1440,120 L0,120 Z" fill="#FCF8F3"/>
+        {/* Torn Paper Effect Bottom (Seamlessly blending) */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] translate-y-[1px] z-20">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(100%+1.3px)] h-[60px] md:h-[100px] fill-zing-cream/50 rotate-180">
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-1.11,1200,42.47V0Z" className="fill-zing-cream/30" opacity=".25"></path>
+            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5V0Z" className="fill-zing-cream/30" opacity=".5"></path>
+            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.41,5.29,2.31,10.57,4.59,15.89,6.78,44,18.08,88,33.94,136,33.94,29,0,57-4.94,83.91-15.11,102.34-38.64,134.42-30,195.2-12.79V0Z" className="fill-background"></path>
           </svg>
         </div>
       </section>
@@ -271,6 +270,28 @@ export default function HomePage() {
       </section>
 
       {/* ── FAQ ── */}
+      {faqs && faqs.length > 0 && (
+        <section className="container mx-auto px-4 py-12 md:py-16">
+          <div className="flex flex-col items-center text-center mb-10" data-aos="fade-up">
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-brand-blue mb-2">Frequently Asked Questions</h2>
+            <p className="text-slate-500 font-medium max-w-2xl">Everything you need to know about our products and services.</p>
+          </div>
+          <div className="max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+            <Accordion type="single" collapsible className="w-full space-y-4">
+              {faqs.map((faq) => (
+                <AccordionItem key={faq.id} value={`item-${faq.id}`} className="bg-white border rounded-xl px-6 shadow-sm">
+                  <AccordionTrigger className="text-left font-bold text-brand-blue hover:text-brand-mustard py-5 text-lg">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-slate-600 pb-5 leading-relaxed text-base">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+      )}
 
       {/* ── Thanks Banner ── */}
       <section className="container mx-auto px-4" data-aos="fade-up">

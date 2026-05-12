@@ -148,59 +148,34 @@
     }
 }
 
-/* ── Hero Wheat Decoration ── */
+/* ── Hero Full-Bleed Carousel ── */
 .hero-section {
     position: relative;
     overflow: hidden;
-}
-
-.hero-section::before,
-.hero-section::after {
-    content: '';
-    position: absolute;
-    width: 150px;
-    height: 350px;
-    z-index: 1;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 350'%3E%3Cg stroke='%23C9B897' stroke-width='1' fill='none' opacity='0.5' stroke-linecap='round'%3E%3C!-- Wheat stalk 1 --%3E%3Cpath d='M30,20 L30,180'/%3E%3Cpath d='M30,30 Q40,28 45,35'/%3E%3Cellipse cx='48' cy='35' rx='3' ry='6' transform='rotate(25 48 35)' stroke-width='0.8'/%3E%3Cpath d='M30,50 Q40,48 45,55'/%3E%3Cellipse cx='48' cy='55' rx='3' ry='6' transform='rotate(25 48 55)' stroke-width='0.8'/%3E%3Cpath d='M30,70 Q40,68 45,75'/%3E%3Cellipse cx='48' cy='75' rx='3' ry='6' transform='rotate(25 48 75)' stroke-width='0.8'/%3E%3Cpath d='M30,90 Q40,88 45,95'/%3E%3Cellipse cx='48' cy='95' rx='3' ry='6' transform='rotate(25 48 95)' stroke-width='0.8'/%3E%3Cpath d='M30,110 Q40,108 45,115'/%3E%3Cellipse cx='48' cy='115' rx='3' ry='6' transform='rotate(25 48 115)' stroke-width='0.8'/%3E%3Cpath d='M30,40 Q20,38 15,45'/%3E%3Cellipse cx='12' cy='45' rx='3' ry='6' transform='rotate(-25 12 45)' stroke-width='0.8'/%3E%3Cpath d='M30,60 Q20,58 15,65'/%3E%3Cellipse cx='12' cy='65' rx='3' ry='6' transform='rotate(-25 12 65)' stroke-width='0.8'/%3E%3Cpath d='M30,80 Q20,78 15,85'/%3E%3Cellipse cx='12' cy='85' rx='3' ry='6' transform='rotate(-25 12 85)' stroke-width='0.8'/%3E%3Cpath d='M30,100 Q20,98 15,105'/%3E%3Cellipse cx='12' cy='105' rx='3' ry='6' transform='rotate(-25 12 105)' stroke-width='0.8'/%3E%3Cpath d='M70,60 L70,220'/%3E%3Cpath d='M70,70 Q80,68 85,75'/%3E%3Cellipse cx='88' cy='75' rx='3' ry='6' transform='rotate(25 88 75)' stroke-width='0.8'/%3E%3Cpath d='M70,90 Q80,88 85,95'/%3E%3Cellipse cx='88' cy='95' rx='3' ry='6' transform='rotate(25 88 95)' stroke-width='0.8'/%3E%3Cpath d='M70,110 Q80,108 85,115'/%3E%3Cellipse cx='88' cy='115' rx='3' ry='6' transform='rotate(25 88 115)' stroke-width='0.8'/%3E%3Cpath d='M70,130 Q80,128 85,135'/%3E%3Cellipse cx='88' cy='135' rx='3' ry='6' transform='rotate(25 88 135)' stroke-width='0.8'/%3E%3Cpath d='M70,150 Q80,148 85,155'/%3E%3Cellipse cx='88' cy='155' rx='3' ry='6' transform='rotate(25 88 155)' stroke-width='0.8'/%3E%3Cpath d='M70,80 Q60,78 55,85'/%3E%3Cellipse cx='52' cy='85' rx='3' ry='6' transform='rotate(-25 52 85)' stroke-width='0.8'/%3E%3Cpath d='M70,100 Q60,98 55,105'/%3E%3Cellipse cx='52' cy='105' rx='3' ry='6' transform='rotate(-25 52 105)' stroke-width='0.8'/%3E%3Cpath d='M70,120 Q60,118 55,125'/%3E%3Cellipse cx='52' cy='125' rx='3' ry='6' transform='rotate(-25 52 125)' stroke-width='0.8'/%3E%3Cpath d='M70,140 Q60,138 55,145'/%3E%3Cellipse cx='52' cy='145' rx='3' ry='6' transform='rotate(-25 52 145)' stroke-width='0.8'/%3E%3Cpath d='M110,100 L110,260'/%3E%3Cpath d='M110,110 Q120,108 125,115'/%3E%3Cellipse cx='128' cy='115' rx='3' ry='6' transform='rotate(25 128 115)' stroke-width='0.8'/%3E%3Cpath d='M110,130 Q120,128 125,135'/%3E%3Cellipse cx='128' cy='135' rx='3' ry='6' transform='rotate(25 128 135)' stroke-width='0.8'/%3E%3Cpath d='M110,150 Q120,148 125,155'/%3E%3Cellipse cx='128' cy='155' rx='3' ry='6' transform='rotate(25 128 155)' stroke-width='0.8'/%3E%3Cpath d='M110,170 Q120,168 125,175'/%3E%3Cellipse cx='128' cy='175' rx='3' ry='6' transform='rotate(25 128 175)' stroke-width='0.8'/%3E%3Cpath d='M110,120 Q100,118 95,125'/%3E%3Cellipse cx='92' cy='125' rx='3' ry='6' transform='rotate(-25 92 125)' stroke-width='0.8'/%3E%3Cpath d='M110,140 Q100,138 95,145'/%3E%3Cellipse cx='92' cy='145' rx='3' ry='6' transform='rotate(-25 92 145)' stroke-width='0.8'/%3E%3Cpath d='M110,160 Q100,158 95,165'/%3E%3Cellipse cx='92' cy='165' rx='3' ry='6' transform='rotate(-25 92 165)' stroke-width='0.8'/%3E%3C/g%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: contain;
-    pointer-events: none;
-}
-
-.hero-section::before {
-    left: 20px;
-    top: 80px;
-}
-
-.hero-section::after {
-    right: 20px;
-    top: 120px;
-    transform: scaleX(-1) rotate(5deg);
-    opacity: 0.3;
+    background-color: var(--color-zing-navy);
 }
 
 .hero-content {
     position: relative;
-    z-index: 2;
+    z-index: 20;
 }
 
-@media (max-width: 1024px) {
-    .hero-section::before,
-    .hero-section::after {
-        width: 100px;
-        height: 230px;
-    }
-    .hero-section::before {
-        left: 10px;
-    }
-    .hero-section::after {
-        right: 10px;
-    }
+/* Ensure background images cover perfectly and transition smoothly */
+.hero-section img {
+    filter: brightness(0.8) contrast(1.1);
+    transition: transform 10s linear;
 }
 
-@media (max-width: 768px) {
-    .hero-section::before,
-    .hero-section::after {
-        display: none;
-    }
+.hero-section .opacity-100 img {
+    transform: scale(1.1);
+}
+
+.hero-content h1, 
+.hero-content p {
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ── Torn Paper Enhancements ── */
+.hero-section svg path {
+    transition: fill 0.3s ease;
 }

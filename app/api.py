@@ -70,7 +70,25 @@ def token_required(f):
     return decorated
 
 
-from app.auth import auth_bp, send_verification_email
+from flask_mail import Message
+from app.tokens import get_reset_token, verify_reset_token
+
+def api_send_verification_email(user):
+    token = get_reset_token(user)
+    mail = current_app.extensions['mail']
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+    
+    verification_url = f"{frontend_url}/verify-email?token={token}"
+    
+    msg = Message('Verify Your Account',
+                  sender=current_app.config['MAIL_USERNAME'],
+                  recipients=[user.email])
+    msg.body = f'''To verify your Zing Healthy Eats account, visit the following link:
+{verification_url}
+
+If you did not sign up for this account, please ignore this email.
+'''
+    mail.send(msg)
 
 
 # ---------------------------------------------------------------------------
@@ -102,7 +120,7 @@ def api_register():
     # Try to send verification email
     message = "Registration successful."
     try:
-        send_verification_email(user)
+        api_send_verification_email(user)
         message += " A verification email has been sent to your inbox."
     except Exception as e:
         current_app.logger.error(f"Failed to send verification email to {email}: {e}")
@@ -142,11 +160,31 @@ def api_resend_verification():
         return jsonify({"message": "Account is already verified."}), 200
 
     try:
-        send_verification_email(user)
+        api_send_verification_email(user)
         return jsonify({"message": "Verification email sent."})
     except Exception as e:
         current_app.logger.error(f"Failed to resend verification email to {user.email}: {e}")
         return jsonify({"error": "Failed to send verification email."}), 500
+
+
+@api_bp.route("/auth/verify-email", methods=["POST"])
+def api_verify_email():
+    """Verify user email via token from frontend."""
+    data = request.get_json(silent=True) or {}
+    token = data.get("token")
+    if not token:
+        return jsonify({"error": "Verification token is required."}), 400
+        
+    user = verify_reset_token(token)
+    if user is None:
+        return jsonify({"error": "The verification link is invalid or has expired."}), 400
+        
+    if user.is_verified:
+        return jsonify({"message": "Account is already verified."}), 200
+        
+    user.is_verified = True
+    db.session.commit()
+    return jsonify({"message": "Your account has been successfully verified!"}), 200
 
 
 @api_bp.route("/auth/me", methods=["GET"])

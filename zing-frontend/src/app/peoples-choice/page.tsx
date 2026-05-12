@@ -44,10 +44,10 @@ export default function PeoplesChoicePage() {
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 bg-brand-mustard/10 px-4 py-2 rounded-full mb-4">
           <Star className="h-5 w-5 text-brand-mustard fill-brand-mustard" />
-          <span className="text-sm font-semibold text-brand-mustard-dark">Featured Collection</span>
+          <span className="text-sm font-semibold text-brand-mustard-dark">Collection</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-brand-blue">{data.title}</h1>
-        <p className="text-slate-500 mt-2">Hand-picked favorites by our community</p>
+        <p className="text-slate-500 mt-2">Exclusive treats curated just for you</p>
       </div>
 
       {data.products.length > 0 ? (

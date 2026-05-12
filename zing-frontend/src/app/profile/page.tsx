@@ -73,18 +73,37 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
         <Card className="border shadow-sm">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-brand-blue/10 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-brand-blue" />
+          <CardContent className="p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-brand-blue/10 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-brand-blue" />
+              </div>
+              <div>
+                <Badge className={user.is_verified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}>
+                  {user.is_verified ? "Verified" : "Unverified"}
+                </Badge>
+                <p className="text-xs text-slate-500 mt-1">
+                  {user.last_order_date ? `Last order: ${user.last_order_date}` : "No orders yet"}
+                </p>
+              </div>
             </div>
-            <div>
-              <Badge className={user.is_verified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}>
-                {user.is_verified ? "Verified" : "Unverified"}
-              </Badge>
-              <p className="text-xs text-slate-500 mt-1">
-                {user.last_order_date ? `Last order: ${user.last_order_date}` : "No orders yet"}
-              </p>
-            </div>
+            
+            {!user.is_verified && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await fetchApi("/api/auth/verify/resend", { method: "POST" });
+                    toast.success("Verification email sent!");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to send email");
+                  }
+                }}
+              >
+                Resend Email
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
