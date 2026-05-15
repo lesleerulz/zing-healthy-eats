@@ -196,12 +196,12 @@ export default function VerifyEmailPage() {
           {status === "success" && (
             <>
               <p className="text-slate-600">{message}</p>
-              <Button
-                asChild
-                className="w-full bg-brand-mustard text-brand-blue hover:bg-brand-mustard/90 font-bold rounded-xl h-11"
+              <Link
+                href="/profile"
+                className="inline-flex items-center justify-center w-full bg-brand-mustard text-brand-blue hover:bg-brand-mustard/90 font-bold rounded-xl h-11 transition-colors"
               >
-                <Link href="/profile">Go to Profile</Link>
-              </Button>
+                Go to Profile
+              </Link>
             </>
           )}
 
@@ -225,9 +225,12 @@ export default function VerifyEmailPage() {
             </>
           )}
 
-          <Button asChild variant="ghost" className="w-full text-slate-400 hover:text-brand-blue text-sm">
-            <Link href="/">Return to Home</Link>
-          </Button>
+          <Link 
+            href="/" 
+            className="inline-flex items-center justify-center w-full text-slate-400 hover:text-brand-blue text-sm font-medium py-2 transition-colors"
+          >
+            Return to Home
+          </Link>
         </CardContent>
       </Card>
     </div>

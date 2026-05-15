@@ -93,7 +93,7 @@ class Product(db.Model):
     # Date and time when the product was added to the database.
     date_added = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     # Title of the product.
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False, index=True)
     # Detailed description of the product.
     description = db.Column(db.Text, nullable=False)
     # Filename for product image.
@@ -155,6 +155,7 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # Foreign key referencing the user who placed the order.
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user = db.relationship("User", foreign_keys=[user_id], backref="buyer_orders")
     # Timestamp when the order was created.
     # Timestamp when the order was created.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -20,14 +20,37 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { user, refreshCart } = useAuth();
   const [saleTitle, setSaleTitle] = useState("People's Choice");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+
+  // Use product.images if available, otherwise just product.image
+  const allImages = (product.images && product.images.length > 0 
+    ? product.images 
+    : [product.image]).filter(Boolean);
 
   useEffect(() => {
-    fetchApi<{ sale_page_title?: string }>("/api/site-settings")
-      .then((settings) => {
-        if (settings.sale_page_title) setSaleTitle(settings.sale_page_title);
-      })
-      .catch(() => {});
-  }, []);
+    // Only fetch if not already set to something other than default
+    if (saleTitle === "People's Choice") {
+      fetchApi<{ sale_page_title?: string }>("/api/site-settings")
+        .then((settings) => {
+          if (settings.sale_page_title) setSaleTitle(settings.sale_page_title);
+        })
+        .catch(() => {});
+    }
+  }, [saleTitle]);
+
+  // Slideshow logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isHovering && allImages.length > 1) {
+      interval = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+      }, 1200);
+    } else if (!isHovering) {
+      setCurrentImageIndex(0); // Reset to first image when not hovering
+    }
+    return () => clearInterval(interval);
+  }, [isHovering, allImages.length]);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,17 +81,43 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/catalog/${product.id}`}>
-      <Card data-aos="zoom-in" className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-3xl will-change-transform">
+      <Card 
+        data-aos="zoom-in" 
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-3xl will-change-transform"
+      >
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-[#F0EDE8] m-2 rounded-2xl">
-          <Image
-            src={productImageUrl(product.image)}
-            alt={product.title}
-            fill
-            className="object-cover group-hover:scale-110 transition-transform duration-700 p-2"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            unoptimized
-          />
+          {allImages.length > 0 ? (
+            <Image
+              src={productImageUrl(allImages[currentImageIndex])}
+              alt={product.title}
+              fill
+              className="object-cover group-hover:scale-105 transition-all duration-700 p-2"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              unoptimized
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-300">
+              <ShoppingBag className="h-10 w-10" />
+            </div>
+          )}
+          
+          {/* Progress indicators for multiple images */}
+          {allImages.length > 1 && isHovering && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {allImages.map((_, idx) => (
+                <div 
+                  key={idx} 
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    idx === currentImageIndex ? "w-4 bg-zing-burgundy" : "w-1 bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {product.is_peoples_choice && (

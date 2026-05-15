@@ -16,7 +16,7 @@ export function staticUrl(path: string): string {
  * Get a product image URL.
  */
 export function productImageUrl(filename: string): string {
-  return staticUrl(`images/product_pictures/${filename}`);
+  return staticUrl(`images/products/${filename}`);
 }
 
 /**

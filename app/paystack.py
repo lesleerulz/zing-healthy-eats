@@ -1,8 +1,10 @@
 import requests
+import os
 
 class PaystackClient:
     """
     Client for interacting with Paystack API.
+    Supports a mock mode for local testing without internet.
     """
     def __init__(self, secret_key, base_url="https://api.paystack.co"):
         self.secret_key = secret_key
@@ -11,12 +13,25 @@ class PaystackClient:
             "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json"
         }
+        # Check if we should use mock mode
+        self.mock_mode = os.getenv("PAYSTACK_MOCK", "false").lower() == "true"
 
     def initialize_transaction(self, email, amount, callback_url, reference=None, metadata=None, channels=None):
         """
         Initialize a transaction.
-        Amount should be in the smallest currency unit (e.g., kobo for NGN, cents for USD/KES).
         """
+        if self.mock_mode:
+            print(f"[Paystack MOCK] Initializing transaction for {email}, amount {amount}")
+            return {
+                "status": True,
+                "message": "Transaction initialized (MOCK)",
+                "data": {
+                    "authorization_url": f"{callback_url}?reference={reference or 'MOCK-REF'}",
+                    "access_code": "MOCK-CODE",
+                    "reference": reference or "MOCK-REF"
+                }
+            }
+
         api_url = f"{self.base_url}/transaction/initialize"
         data = {
             "email": email,
@@ -40,6 +55,18 @@ class PaystackClient:
         """
         Initiate a mobile money charge.
         """
+        if self.mock_mode:
+            print(f"[Paystack MOCK] Mobile money charge for {phone}, amount {amount}")
+            return {
+                "status": True,
+                "message": "Charge initiated (MOCK)",
+                "data": {
+                    "status": "success",
+                    "reference": reference or "MOCK-KES-REF",
+                    "display_text": "MOCK: Check your phone for prompt"
+                }
+            }
+
         api_url = f"{self.base_url}/charge"
         data = {
             "email": email,
@@ -63,6 +90,19 @@ class PaystackClient:
         """
         Verify a transaction using its reference.
         """
+        if self.mock_mode or (reference and reference.startswith("MOCK")):
+            print(f"[Paystack MOCK] Verifying transaction {reference}")
+            return {
+                "status": True,
+                "message": "Verification successful (MOCK)",
+                "data": {
+                    "status": "success",
+                    "reference": reference,
+                    "amount": 0, # Not strictly needed for UI flow
+                    "gateway_response": "Successful"
+                }
+            }
+
         api_url = f"{self.base_url}/transaction/verify/{reference}"
         
         try:

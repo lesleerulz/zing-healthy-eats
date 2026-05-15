@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import type { PaginatedProducts, Category } from "@/lib/types";
@@ -18,6 +18,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function CatalogPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8 space-y-8"><Skeleton className="h-10 w-48" /><div className="grid grid-cols-4 gap-6"><Skeleton className="h-64" /><Skeleton className="h-64" /></div></div>}>
+      <CatalogContent />
+    </Suspense>
+  );
+}
+
+function CatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -31,6 +39,11 @@ export default function CatalogPage() {
   const categoryId = searchParams.get("category_id") || "";
 
   const [searchInput, setSearchInput] = useState(search);
+
+  // Sync search input with URL search param
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -87,7 +100,7 @@ export default function CatalogPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row gap-3 mb-8 p-4 bg-white rounded-xl shadow-sm border" data-aos="fade-down">
+      <div className="flex flex-col md:flex-row gap-3 mb-8 p-4 bg-white rounded-xl shadow-sm border" data-aos="fade-down" suppressHydrationWarning>
         {/* Search */}
         <form onSubmit={handleSearch} className="flex gap-2 flex-1">
           <div className="relative flex-1">

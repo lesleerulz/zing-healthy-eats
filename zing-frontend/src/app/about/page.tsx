@@ -26,9 +26,30 @@ export default function AboutPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <Skeleton className="h-[400px] rounded-2xl" />
-        <Skeleton className="h-32 rounded-xl" />
+      <div className="container mx-auto px-4 py-8 space-y-16">
+        {/* Hero Skeleton */}
+        <Skeleton className="h-[50vh] md:h-[60vh] rounded-3xl w-full" />
+        
+        {/* Story/Mission Skeleton */}
+        <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+
+        {/* Team Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-square rounded-full w-3/4 mx-auto" />
+              <Skeleton className="h-4 w-1/2 mx-auto" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -56,12 +77,24 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="container mx-auto px-4 max-w-3xl" data-aos="fade-up">
-        <h2 className="text-3xl font-bold text-brand-blue text-center mb-6">Our Story</h2>
-        <div className="prose prose-lg mx-auto text-slate-600 text-center leading-relaxed">
-          <p>{data.our_story}</p>
-        </div>
+      {/* Our Story & Mission */}
+      <section className="container mx-auto px-4 max-w-4xl space-y-12" data-aos="fade-up">
+         <div>
+            <h2 className="text-3xl font-bold text-brand-blue mb-6">Our Story</h2>
+            <div className="prose prose-lg text-slate-600 leading-relaxed">
+              <p>{data.our_story}</p>
+            </div>
+         </div>
+         {data.mission && (
+           <div className="bg-brand-mustard/10 p-8 md:p-12 rounded-3xl border border-brand-mustard/20 text-center relative overflow-hidden">
+              <div className="absolute top-4 left-8 text-6xl text-brand-mustard/20 font-serif">"</div>
+              <h2 className="text-2xl font-bold text-brand-blue mb-4 relative z-10">Our Mission</h2>
+              <div className="text-xl md:text-2xl text-slate-700 italic font-medium leading-relaxed max-w-2xl mx-auto relative z-10">
+                 {data.mission}
+              </div>
+              <div className="absolute bottom-4 right-8 text-6xl text-brand-mustard/20 font-serif translate-y-4">"</div>
+           </div>
+         )}
       </section>
 
       {/* Team */}
@@ -77,7 +110,6 @@ export default function AboutPage() {
                     alt={member.name}
                     fill
                     className="object-cover"
-                    unoptimized
                   />
                 </div>
                 <CardContent className="p-4 text-center">
@@ -96,7 +128,7 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-brand-blue text-center mb-8">
             Frequently Asked Questions
           </h2>
-          <Accordion type="single" className="w-full space-y-4">
+          <Accordion className="w-full space-y-4">
             {data.faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.id}

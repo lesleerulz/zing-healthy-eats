@@ -1,71 +1,110 @@
-<div id="addProductModal" class="modal fade " tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addProductModalLabel">Add prodduct</h5>
-                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Fermer"></button>
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back Button -->
+            <a href="{{ url_for('dashboard') }}" class="btn btn-link text-decoration-none text-brand-blue mb-4 p-0">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-brand-blue text-white p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="bi bi-box-seam fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0">Add New Product</h4>
+                            <p class="text-white text-opacity-75 small mb-0">Fill in the details to add a new item to your catalog.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="post" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
+                        <div class="row g-4">
+                            <!-- Basic Info -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Product Title</label>
+                                <input type="text" name="title" class="form-control form-control-lg rounded-3 border-light-subtle bg-light" placeholder="e.g. Signature Trail Mix" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Description</label>
+                                <textarea name="description" class="form-control rounded-3 border-light-subtle bg-light" rows="5" placeholder="Describe the ingredients, taste, and health benefits..." required></textarea>
+                            </div>
+
+                            <!-- Category & Pricing -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Category</label>
+                                <select name="category_id" class="form-select rounded-3 border-light-subtle bg-light" required>
+                                    <option value="">Select a category</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Stock Quantity</label>
+                                <input type="number" name="quantity" class="form-control rounded-3 border-light-subtle bg-light" placeholder="0" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Selling Price (KES)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-light-subtle">KSh</span>
+                                    <input type="number" step="0.01" name="price" class="form-control rounded-end-3 border-light-subtle bg-light" placeholder="0.00" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Original Price (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-light-subtle">KSh</span>
+                                    <input type="number" step="0.01" name="original_price" class="form-control rounded-end-3 border-light-subtle bg-light" placeholder="0.00">
+                                </div>
+                                <div class="form-text small">Used to show "XX% OFF" badges.</div>
+                            </div>
+
+                            <!-- Images -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Product Images</label>
+                                <div class="p-4 border border-dashed rounded-4 bg-light text-center">
+                                    <i class="bi bi-cloud-upload fs-1 text-muted mb-2"></i>
+                                    <input type="file" name="image" class="form-control rounded-pill" accept="image/*" multiple required>
+                                    <p class="text-muted small mt-2 mb-0">You can select multiple images. The first one will be the primary photo.</p>
+                                </div>
+                            </div>
+
+                            <!-- Settings -->
+                            <div class="col-12">
+                                <div class="form-check form-switch p-3 bg-light rounded-3 border border-light-subtle">
+                                    <input type="checkbox" class="form-check-input ms-0 me-2" id="isPeoplesChoice" name="is_peoples_choice">
+                                    <label class="form-check-label fw-bold" for="isPeoplesChoice">Featured in "{{ sale_page_title }}"</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 pt-3">
+                                <button type="submit" class="btn btn-brand-blue w-100 py-3 rounded-pill fw-bold shadow-sm">
+                                    <i class="bi bi-plus-circle me-2"></i> Create Product
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <form method="post" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Name:</label>
-                        <input type="text" name="title" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Description:</label>
-                        <textarea name="description" class="form-control" rows="8" required></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Category:</label>
-                        <select name="category_id" class="form-select">
-                            <option value="">Select a category</option>
-                            {% for category in categories %}
-                            <option value="{{ category.id }}">{{ category.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Unit price (KES):</label>
-                        <div class="input-group">
-                            <span class="input-group-text">KES</span>
-                            <input type="number" step="0.01" name="price" class="form-control" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Original Price (for discounts):</label>
-                        <div class="input-group">
-                            <span class="input-group-text">KES</span>
-                            <input type="number" step="0.01" name="original_price" class="form-control" placeholder="Optional">
-                        </div>
-                        <div class="form-text">Leave empty if there is no discount.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Quantity:</label>
-                        <input type="number" name="quantity" class="form-control" required>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Product images (Select multiple):</label>
-                        <input type="file" name="image" class="form-control" accept="image/*" multiple>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="isPeoplesChoice" name="is_peoples_choice">
-                        <label class="form-check-label" for="isPeoplesChoice">Add to {{ sale_page_title }}</label>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success">Add product</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
+
+<style>
+    .bg-brand-blue { background-color: #0B0E14; }
+    .btn-brand-blue { background-color: #0B0E14; color: white; border: none; transition: all 0.3s; }
+    .btn-brand-blue:hover { background-color: #1a1f2b; color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #dee2e6 !important; }
+</style>
+
+{% endblock %}

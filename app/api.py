@@ -425,6 +425,7 @@ def api_faqs():
 def api_about():
     """Return about page content: our story, hero image, and team members."""
     our_story = AboutContent.query.filter_by(section="our_story").first()
+    mission = AboutContent.query.filter_by(section="mission").first()
     hero = AboutContent.query.filter_by(section="about_hero").first()
     team = TeamMember.query.all()
 
@@ -432,6 +433,7 @@ def api_about():
 
     return jsonify({
         "our_story": our_story.content if our_story else "Our story content goes here.",
+        "mission": mission.content if mission else None,
         "hero_image": hero.content if hero else "hero.webp",
         "team_members": [m.to_dict() for m in team],
         "faqs": [f.to_dict() for f in faqs],

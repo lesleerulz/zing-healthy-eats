@@ -100,6 +100,7 @@ export interface TeamMember {
 
 export interface AboutData {
   our_story: string;
+  mission?: string;
   hero_image: string;
   team_members: TeamMember[];
   faqs: FAQ[];

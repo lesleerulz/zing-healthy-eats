@@ -77,6 +77,27 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": product.title,
+            "image": [productImageUrl(product.image)],
+            "description": product.description,
+            "offers": {
+              "@type": "Offer",
+              "url": typeof window !== "undefined" ? `${window.location.origin}/catalog/${product.id}` : "",
+              "priceCurrency": "KES",
+              "price": product.price,
+              "availability": outOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+            }
+          })
+        }}
+      />
+
       {/* Back */}
       <Link
         href="/catalog"

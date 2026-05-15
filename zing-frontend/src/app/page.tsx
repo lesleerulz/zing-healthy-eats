@@ -111,15 +111,19 @@ export default function HomePage() {
                 }`}
               >
                 <div className="absolute inset-0 bg-black/30 z-10" /> {/* Overlay for readability */}
-                <Image
-                  src={carouselImageUrl(img.image_filename)}
-                  alt="Zing Healthy Treats"
-                  fill
-                  className="object-cover"
-                  priority={idx === 0}
-                  sizes="100vw"
-                  unoptimized
-                />
+                {img.image_filename ? (
+                  <Image
+                    src={carouselImageUrl(img.image_filename)}
+                    alt="Zing Healthy Treats"
+                    fill
+                    className="object-cover"
+                    priority={idx === 0}
+                    sizes="100vw"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zing-navy/20" />
+                )}
               </div>
             ))
           ) : (
@@ -260,7 +264,7 @@ export default function HomePage() {
             <p className="text-slate-500 font-medium max-w-2xl">Everything you need to know about our products and services.</p>
           </div>
           <div className="max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="100">
-            <Accordion type="single" className="w-full space-y-4">
+            <Accordion className="w-full space-y-4">
               {faqs.map((faq) => (
                 <AccordionItem key={faq.id} value={`item-${faq.id}`} className="bg-white border rounded-xl px-6 shadow-sm">
                   <AccordionTrigger className="text-left font-bold text-brand-blue hover:text-brand-mustard py-5 text-lg">

@@ -47,8 +47,8 @@ def create_app() -> Flask:
     # Enable gzip/brotli compression for all responses
     Compress(app)
 
-    # Enable CORS for API routes (Next.js frontend on different port).
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS for API routes and static files.
+    CORS(app, resources={r"/api/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
     
     # Initialize SocketIO
     socketio.init_app(app, cors_allowed_origins="*")
@@ -214,9 +214,11 @@ def create_app() -> Flask:
 
 
         # Fetch About content.
-        our_story = AboutContent.query.filter_by(section="our_story").first()
-        about_hero = AboutContent.query.filter_by(section="about_hero").first()
+        about_sections = {s.section: s for s in AboutContent.query.all()}
         team_members = TeamMember.query.all()
+        
+        # Fetch Site settings.
+        site_settings = {s.key: s for s in SiteSetting.query.all()}
 
         return render_template(
             "admin/dashboard.html",
@@ -228,8 +230,8 @@ def create_app() -> Flask:
             carousel_images=carousel_images,
             faqs=faqs,
             orders=Order.query.order_by(Order.created_at.desc()).all(),
-            our_story=our_story,
-            about_hero=about_hero,
+            about_sections=about_sections,
+            site_settings=site_settings,
             team_members=team_members
         )
 
@@ -400,7 +402,11 @@ def create_app() -> Flask:
             return redirect(url_for("index"))
 
         content = request.form.get("content")
-        section = "our_story"
+        section = request.form.get("section", "our_story")
+
+        if not content:
+            flash("Content cannot be empty.", "danger")
+            return redirect(url_for("dashboard"))
 
         about_entry = AboutContent.query.filter_by(section=section).first()
         if about_entry:
@@ -410,7 +416,7 @@ def create_app() -> Flask:
             db.session.add(new_entry)
         
         db.session.commit()
-        flash("About content updated successfully.", "success")
+        flash(f"{section.replace('_', ' ').title()} updated successfully.", "success")
         return redirect(url_for("dashboard"))
 
     @app.route("/dashboard/add-product", methods=["GET", "POST"])
@@ -882,25 +888,25 @@ def create_app() -> Flask:
         if not current_user.is_admin:
             return redirect(url_for("index"))
             
-        ga_id = request.form.get("ga_measurement_id")
-        sale_page_enabled = "true" if request.form.get("sale_page_enabled") == "on" else "false"
+        ga_id = request.form.get("ga_measurement_id", "").strip()
+        sale_page_enabled = "true" if request.form.get("sale_page_enabled") else "false"
         sale_page_title = request.form.get("sale_page_title", "").strip() or "People's Choice"
         support_phone = request.form.get("support_phone", "").strip()
 
-        def upsert_setting(key, value):
+        def upsert_site_setting(key, value):
             s = SiteSetting.query.filter_by(key=key).first()
             if s:
                 s.value = value
             else:
                 db.session.add(SiteSetting(key=key, value=value))
 
-        upsert_setting("ga_measurement_id", ga_id)
-        upsert_setting("sale_page_enabled", sale_page_enabled)
-        upsert_setting("sale_page_title", sale_page_title)
-        upsert_setting("support_phone", support_phone)
+        upsert_site_setting("ga_measurement_id", ga_id)
+        upsert_site_setting("sale_page_enabled", sale_page_enabled)
+        upsert_site_setting("sale_page_title", sale_page_title)
+        upsert_site_setting("support_phone", support_phone)
 
         db.session.commit()
-        flash("Settings updated.", "success")
+        flash("Settings updated successfully.", "success")
         return redirect(url_for("dashboard"))
 
     @app.cli.command("init-database")

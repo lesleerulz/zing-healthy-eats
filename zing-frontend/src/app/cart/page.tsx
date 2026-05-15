@@ -105,19 +105,23 @@ export default function CartPage() {
             className="flex items-center gap-4 p-4 bg-white rounded-xl border shadow-sm"
           >
             {/* Image */}
-            {item.product && (
-              <Link href={`/catalog/${item.product_id}`} className="flex-shrink-0">
-                <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-slate-100">
+            <Link href={`/catalog/${item.product_id}`} className="flex-shrink-0">
+              <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-slate-100">
+                {item.product?.image ? (
                   <Image
                     src={productImageUrl(item.product.image)}
-                    alt={item.product.title}
+                    alt={item.product.title || "Product"}
                     fill
                     className="object-cover"
                     unoptimized
                   />
-                </div>
-              </Link>
-            )}
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300">
+                    <ShoppingBag className="h-8 w-8" />
+                  </div>
+                )}
+              </div>
+            </Link>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
