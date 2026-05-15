@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "zinghealthytreats.com",
+        pathname: "/static/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.zinghealthytreats.com",
+        pathname: "/static/**",
+      },
+    ],
+
+        protocol: "https",
         hostname: "zinghealthyeats.com",
         pathname: "/static/**",
       },
