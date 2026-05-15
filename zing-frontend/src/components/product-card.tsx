@@ -51,10 +51,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   const outOfStock = product.quantity <= 0;
+  const hasDiscount = product.original_price && product.original_price > product.price;
+  const discountPercentage = hasDiscount 
+    ? Math.round(((product.original_price! - product.price) / product.original_price!) * 100) 
+    : 0;
 
   return (
     <Link href={`/catalog/${product.id}`}>
-      <Card data-aos="zoom-in" className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-3xl">
+      <Card data-aos="zoom-in" className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-3xl will-change-transform">
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-[#F0EDE8] m-2 rounded-2xl">
           <Image
@@ -70,6 +74,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.is_peoples_choice && (
               <Badge className="bg-zing-burgundy text-white text-[9px] font-bold rounded-full px-2.5 py-0.5 border-0 shadow-lg">
                 {saleTitle}
+              </Badge>
+            )}
+            {hasDiscount && (
+              <Badge className="bg-red-600 text-white text-[10px] font-black rounded-full px-2.5 py-1 border-0 shadow-md animate-pulse">
+                -{discountPercentage}% OFF
               </Badge>
             )}
             {outOfStock && (
@@ -97,20 +106,27 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.description}
           </p>
 
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-base font-bold text-zing-burgundy">
-              KSh {product.price.toLocaleString()}
-            </span>
+          <div className="flex flex-col mt-4">
+            {hasDiscount && (
+              <span className="text-[10px] text-slate-400 line-through mb-0.5">
+                KSh {product.original_price?.toLocaleString()}
+              </span>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-base font-bold text-zing-burgundy">
+                KSh {product.price.toLocaleString()}
+              </span>
 
-            <Button
-              size="sm"
-              onClick={handleAddToCart}
-              disabled={outOfStock}
-              className="bg-zing-yellow text-zing-navy hover:bg-yellow-500 font-bold rounded-full shadow-md text-xs h-9 px-4 flex items-center gap-1.5 group/btn"
-            >
-              <ShoppingBag strokeWidth={1.5} className="h-3.5 w-3.5" />
-              {outOfStock ? "Sold Out" : "Add"}
-            </Button>
+              <Button
+                size="sm"
+                onClick={handleAddToCart}
+                disabled={outOfStock}
+                className="bg-zing-yellow text-zing-navy hover:bg-yellow-500 font-bold rounded-full shadow-md text-xs h-9 px-4 flex items-center gap-1.5 group/btn"
+              >
+                <ShoppingBag strokeWidth={1.5} className="h-3.5 w-3.5" />
+                {outOfStock ? "Sold Out" : "Add"}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

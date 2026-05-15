@@ -132,6 +132,23 @@
     }
 }
 
+/* ── Performance & Rendering Optimizations ── */
+@layer base {
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Force hardware acceleration for common animated elements */
+    [data-aos] {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+        will-change: transform, opacity;
+    }
+}
+
 /* ── Custom Utilities ── */
 @layer utilities {
     .text-gradient-brand {
@@ -145,6 +162,61 @@
     }
     .bg-noise {
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+
+    /* ── Sale Theme Animations ── */
+    @keyframes sale-shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+
+    /* Winter: Blue/Silver Frost */
+    .theme-winter {
+        background: linear-gradient(to right, #1e3a8a 0%, #3b82f6 20%, #ffffff 40%, #ffffff 60%, #3b82f6 80%, #1e3a8a 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: sale-shimmer 4s linear infinite;
+        text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    /* Summer: Sun/Gold/Orange */
+    .theme-summer {
+        background: linear-gradient(to right, #b45309 0%, #f59e0b 20%, #fef3c7 40%, #fef3c7 60%, #f59e0b 80%, #b45309 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: sale-shimmer 3s linear infinite;
+        text-shadow: 0 0 20px rgba(245,158,11,0.2);
+    }
+
+    /* Black Friday: Dark/Gold/Electric */
+    .theme-blackfriday {
+        background: linear-gradient(to right, #000000 0%, #451a03 20%, #fbbf24 40%, #fbbf24 60%, #451a03 80%, #000000 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: sale-shimmer 2s linear infinite;
+        text-shadow: 0 0 30px rgba(251,191,36,0.4);
+    }
+
+    /* Promotional: Vibrant Red/Gold (Urgent) */
+    .theme-promotional {
+        background: linear-gradient(to right, #991b1b 0%, #dc2626 20%, #fef3c7 40%, #fef3c7 60%, #dc2626 80%, #991b1b 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: sale-shimmer 2.5s linear infinite;
+        text-shadow: 0 0 20px rgba(220,38,38,0.2);
+    }
+
+    /* Neutral: Premium Brand Gold */
+    .theme-neutral {
+        background: linear-gradient(to right, #78350f 0%, #d4a017 20%, #fef3c7 40%, #fef3c7 60%, #d4a017 80%, #78350f 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: sale-shimmer 5s linear infinite;
     }
 }
 

@@ -428,10 +428,13 @@ def api_about():
     hero = AboutContent.query.filter_by(section="about_hero").first()
     team = TeamMember.query.all()
 
+    faqs = FAQ.query.all()
+
     return jsonify({
         "our_story": our_story.content if our_story else "Our story content goes here.",
         "hero_image": hero.content if hero else "hero.webp",
         "team_members": [m.to_dict() for m in team],
+        "faqs": [f.to_dict() for f in faqs],
     })
 
 
@@ -632,16 +635,23 @@ def api_checkout_mpesa():
     if not phone_number:
         return jsonify({"error": "Phone number is required."}), 400
 
-    # Format phone number for Paystack (KES M-Pesa needs 254...)
+    # Format phone number for Paystack (KES M-Pesa needs +254...)
     formatted_phone = phone_number
     if formatted_phone.startswith("0"):
-        formatted_phone = "254" + formatted_phone[1:]
-    elif formatted_phone.startswith("+"):
-        formatted_phone = formatted_phone[1:]
-    
-    # Ensure it starts with 254 if it's a 9-digit number
-    if len(formatted_phone) == 9:
-        formatted_phone = "254" + formatted_phone
+        formatted_phone = "+254" + formatted_phone[1:]
+    elif not formatted_phone.startswith("+"):
+        if len(formatted_phone) == 9:
+            formatted_phone = "+254" + formatted_phone
+        elif formatted_phone.startswith("254"):
+            formatted_phone = "+" + formatted_phone
+        else:
+            # Fallback: if it's already 12 digits starting with 254, add +
+            if len(formatted_phone) == 12 and formatted_phone.startswith("254"):
+                formatted_phone = "+" + formatted_phone
+            else:
+                # If we don't know, just try to prepend +254 if not already there
+                formatted_phone = "+254" + formatted_phone.lstrip("+")
+
 
     items = CartItem.query.filter_by(user_id=user.id).all()
     if not items:
@@ -742,6 +752,7 @@ def api_checkout_paystack_initialize():
     delivery_lng = data.get("delivery_lng")
     delivery_type = data.get("delivery_type", "delivery")
     delivery_address = data.get("delivery_address")
+    method = data.get("method", "all") # 'mpesa', 'card', or 'all'
 
     items = CartItem.query.filter_by(user_id=user.id).all()
     if not items:
@@ -754,8 +765,6 @@ def api_checkout_paystack_initialize():
         delivery_fee, _ = calculate_delivery_fee(delivery_lat, delivery_lng)
         
     total_amount = amount + delivery_fee
-    # Paystack amount is in kobo/cents. For KES, it's also cents? 
-    # Actually Paystack KES uses cents (multiply by 100).
     paystack_amount = int(total_amount * 100)
 
     # Create Order.
@@ -823,12 +832,20 @@ def api_checkout_paystack_initialize():
                 "value": "Nairobi CBD Station"
             })
 
+        # Pre-select channels if method is specified
+        channels = None
+        if method == "mpesa":
+            channels = ["mobile_money"]
+        elif method == "card":
+            channels = ["card", "bank_transfer"]
+
         response = paystack.initialize_transaction(
             email=user.email,
             amount=paystack_amount,
             callback_url=app.config["PAYSTACK_CALLBACK_URL"],
             reference=reference,
-            metadata=metadata
+            metadata=metadata,
+            channels=channels
         )
 
         if response.get("status"):

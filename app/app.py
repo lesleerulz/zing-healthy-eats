@@ -212,16 +212,11 @@ def create_app() -> Flask:
         total_orders_month = Order.query.filter(Order.created_at >= month_start).count()
         faqs = FAQ.query.all()
 
-        recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
 
         # Fetch About content.
         our_story = AboutContent.query.filter_by(section="our_story").first()
         about_hero = AboutContent.query.filter_by(section="about_hero").first()
         team_members = TeamMember.query.all()
-
-        # Render the dashboard template with all metrics.
-        drivers = User.query.filter_by(is_driver=True).all()
-        all_users = User.query.all()
 
         return render_template(
             "admin/dashboard.html",
@@ -232,100 +227,12 @@ def create_app() -> Flask:
             total_orders_month=total_orders_month,
             carousel_images=carousel_images,
             faqs=faqs,
-            recent_orders=recent_orders,
+            orders=Order.query.order_by(Order.created_at.desc()).all(),
             our_story=our_story,
             about_hero=about_hero,
-            team_members=team_members,
-            drivers=drivers,
-            all_users=all_users
+            team_members=team_members
         )
 
-    @app.route("/admin/delivery/<int:order_id>")
-    @login_required
-    def admin_delivery(order_id):
-        """
-        Admin/Driver interface for broadcasting live location to client.
-        """
-        order = Order.query.get_or_404(order_id)
-
-        # Allow admins or the assigned driver
-        if not current_user.is_admin and (not current_user.is_driver or order.driver_id != current_user.id):
-            return render_template("error/403.html"), 403
-
-        if order.status != "Out for Delivery":
-            order.status = "Out for Delivery"
-            db.session.commit()
-            
-        return render_template("admin/delivery_tracking.html", title="Delivery Tracking", order=order)
-
-    @app.route("/order/<int:order_id>/track")
-    @login_required
-    def track_order(order_id):
-        """
-        Client interface for viewing live delivery location.
-        """
-        order = Order.query.get_or_404(order_id)
-        # Ensure only the owner OR an admin can track it
-        if order.user_id != current_user.id and not current_user.is_admin:
-            return render_template("error/403.html"), 403
-            
-        return render_template("shop/track_order.html", title="Track Order", order=order)
-
-    @app.route("/dashboard/toggle-driver/<int:user_id>", methods=["POST"])
-    @login_required
-    def toggle_driver(user_id):
-        """
-        Promote or demote a user to/from driver role.
-        """
-        if not current_user.is_admin:
-            return render_template("error/403.html"), 403
-
-        user = User.query.get_or_404(user_id)
-        user.is_driver = not user.is_driver
-        db.session.commit()
-
-        action = "promoted to" if user.is_driver else "removed from"
-        flash(f"{user.username} {action} driver role.", "success")
-        return redirect(url_for("dashboard"))
-
-    @app.route("/dashboard/assign-driver/<int:order_id>", methods=["POST"])
-    @login_required
-    def assign_driver(order_id):
-        """
-        Assign a driver to an order.
-        """
-        if not current_user.is_admin:
-            return render_template("error/403.html"), 403
-
-        order = Order.query.get_or_404(order_id)
-        driver_id = request.form.get("driver_id")
-
-        if driver_id:
-            driver = User.query.get(int(driver_id))
-            if driver and driver.is_driver:
-                order.driver_id = driver.id
-                db.session.commit()
-                flash(f"Driver {driver.username} assigned to Order #{order.id}.", "success")
-            else:
-                flash("Invalid driver.", "danger")
-        else:
-            order.driver_id = None
-            db.session.commit()
-            flash(f"Driver unassigned from Order #{order.id}.", "info")
-
-        return redirect(url_for("dashboard"))
-
-    @app.route("/driver/dashboard")
-    @login_required
-    def driver_dashboard():
-        """
-        Driver's limited dashboard showing only their assigned orders.
-        """
-        if not current_user.is_driver:
-            return render_template("error/403.html"), 403
-
-        assigned_orders = Order.query.filter_by(driver_id=current_user.id).order_by(Order.created_at.desc()).all()
-        return render_template("driver/driver_dashboard.html", title="My Deliveries", orders=assigned_orders)
 
 
     @app.route("/dashboard/manage-carousel", methods=["POST"])
@@ -443,6 +350,27 @@ def create_app() -> Flask:
         flash("FAQ deleted successfully.", "success")
         return redirect(url_for("dashboard"))
 
+    @app.route("/dashboard/delete-order/<int:order_id>", methods=["POST"])
+    @login_required
+    def delete_order(order_id: int):
+        """
+        Delete an order.
+        """
+        if not current_user.is_admin:
+            flash("Access denied.", "danger")
+            return redirect(url_for("index"))
+
+        order = Order.query.get_or_404(order_id)
+        
+        # Also delete order items
+        from app.models import OrderItem
+        OrderItem.query.filter_by(order_id=order.id).delete()
+        
+        db.session.delete(order)
+        db.session.commit()
+        flash(f"Order #{order_id} deleted successfully.", "success")
+        return redirect(url_for("dashboard"))
+
     @app.route("/dashboard/update-faq/<int:faq_id>", methods=["POST"])
     @login_required
     def update_faq(faq_id: int):
@@ -500,6 +428,8 @@ def create_app() -> Flask:
             title = request.form["title"]
             description = request.form["description"]
             price = float(request.form["price"])
+            original_price_val = request.form.get("original_price")
+            original_price = float(original_price_val) if original_price_val else None
             quantity = int(request.form["quantity"])
             category_id = request.form.get("category_id")
             image_file = request.files["image"]
@@ -523,6 +453,7 @@ def create_app() -> Flask:
                 description=description,
                 image=filename,
                 price=price,
+                original_price=original_price,
                 quantity=quantity,
                 category_id=category_id,
                 is_peoples_choice=True if request.form.get("is_peoples_choice") == "on" else False
@@ -662,6 +593,8 @@ def create_app() -> Flask:
             product.title = request.form["title"]
             product.description = request.form["description"]
             product.price = float(request.form["price"])
+            original_price_val = request.form.get("original_price")
+            product.original_price = float(original_price_val) if original_price_val else None
             product.quantity = int(request.form["quantity"])
             product.category_id = request.form.get("category_id")
             product.is_peoples_choice = True if request.form.get("is_peoples_choice") == "on" else False

@@ -98,8 +98,9 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
     # Filename for product image.
     image = db.Column(db.String(128), nullable=False, default="default_product.webp")
-    # Price of the product.
     price = db.Column(db.Float, nullable=False)
+    # Original price for discounts (strike-through).
+    original_price = db.Column(db.Float, nullable=True)
     # Available stock quantity.
     quantity = db.Column(db.Integer, nullable=False, default=0)
     # Foreign key referencing the category (nullable for existing products).
@@ -116,6 +117,7 @@ class Product(db.Model):
             "description": self.description,
             "image": self.image,
             "price": self.price,
+            "original_price": self.original_price,
             "quantity": self.quantity,
             "category_id": self.category_id,
             "category_name": self.category.name if self.category else None,
@@ -174,6 +176,13 @@ class Order(db.Model):
     delivery_fee = db.Column(db.Float, default=0.0)
     # Relationship to associated order items.
     items = db.relationship("OrderItem", backref="order", lazy=True)
+
+    @property
+    def total(self) -> float:
+        """
+        Calculate the total price for this order.
+        """
+        return sum(item.subtotal for item in self.items) + (self.delivery_fee or 0.0)
 
     def to_dict(self) -> dict:
         return {

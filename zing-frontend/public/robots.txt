@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Sitemap will be generated during deployment or via a route

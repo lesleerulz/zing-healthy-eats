@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, XCircle, MailCheck, RefreshCw, Clock } from "lucide-react";
+import { ShieldCheck, XCircle, MailCheck, RefreshCw, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 
 const OTP_DURATION_SECS = 10 * 60; // 10 minutes
@@ -138,6 +138,13 @@ export default function VerifyEmailPage() {
                 <span className="text-brand-blue font-semibold">{user?.email || "your email"}</span>.
                 <br />Enter it below to verify your account.
               </p>
+
+              <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex gap-2 text-left">
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-700 leading-tight">
+                  <strong>Tip:</strong> If you don't see the email, please check your <strong>Spam or Junk</strong> folder.
+                </p>
+              </div>
 
               {/* Countdown timer */}
               <div className={`flex items-center justify-center gap-2 text-sm font-semibold ${timerColor}`}>

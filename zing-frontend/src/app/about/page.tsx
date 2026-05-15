@@ -6,6 +6,12 @@ import { fetchApi, aboutHeroUrl, teamImageUrl } from "@/lib/api";
 import type { AboutData } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function AboutPage() {
   const [data, setData] = useState<AboutData | null>(null);
@@ -81,6 +87,33 @@ export default function AboutPage() {
               </Card>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* FAQs */}
+      {data.faqs && data.faqs.length > 0 && (
+        <section className="container mx-auto px-4 max-w-3xl">
+          <h2 className="text-3xl font-bold text-brand-blue text-center mb-8">
+            Frequently Asked Questions
+          </h2>
+          <Accordion type="single" className="w-full space-y-4">
+            {data.faqs.map((faq, index) => (
+              <AccordionItem
+                key={faq.id}
+                value={`item-${faq.id}`}
+                data-aos="fade-up"
+                data-aos-delay={index * 50}
+                className="border rounded-xl px-4 bg-white shadow-sm hover:shadow-md transition-all"
+              >
+                <AccordionTrigger className="text-left font-bold text-brand-blue hover:no-underline py-4">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-slate-600 leading-relaxed pb-4">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </section>
       )}
     </div>

@@ -27,6 +27,7 @@ export interface Product {
   description: string;
   image: string;
   price: number;
+  original_price: number | null;
   quantity: number;
   category_id: number | null;
   category_name: string | null;
@@ -101,6 +102,7 @@ export interface AboutData {
   our_story: string;
   hero_image: string;
   team_members: TeamMember[];
+  faqs: FAQ[];
 }
 
 export interface SiteSettings {

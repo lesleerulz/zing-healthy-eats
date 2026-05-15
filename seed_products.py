@@ -25,6 +25,7 @@ def seed():
                 "title": "Zing Trail Mix",
                 "description": "Our signature blend of premium nuts, seeds, and dried fruits. High in protein, fiber, and Omega-3. The perfect on-the-go snack.",
                 "price": 850,
+                "original_price": 1000,
                 "quantity": 50,
                 "image": "trail_mix.jpg",
                 "category_id": cat_map["Trail Mix"],
@@ -34,6 +35,7 @@ def seed():
                 "title": "Nutty Blend Granola",
                 "description": "Oven-baked granola with a rich blend of almonds, cashews, and seeds. Naturally sweetened and incredibly crunchy.",
                 "price": 950,
+                "original_price": 1200,
                 "quantity": 30,
                 "image": "nutty_blend_granola.jpg",
                 "category_id": cat_map["Granola"],
@@ -79,6 +81,7 @@ def seed():
                 "title": "Zing Signature Gift Hamper",
                 "description": "The ultimate healthy gift. Includes a variety of our best-selling granolas, nuts, and trail mixes beautifully packaged.",
                 "price": 3500,
+                "original_price": 4500,
                 "quantity": 10,
                 "image": "gift_hamper.jpg",
                 "category_id": cat_map["Gift Hampers"],
@@ -91,6 +94,7 @@ def seed():
             if existing:
                 existing.description = p_data["description"]
                 existing.price = p_data["price"]
+                existing.original_price = p_data.get("original_price")
                 existing.image = p_data["image"]
                 existing.category_id = p_data["category_id"]
                 existing.is_peoples_choice = p_data["is_peoples_choice"]

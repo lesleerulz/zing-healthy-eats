@@ -32,6 +32,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: "ease-out-cubic",
+      once: true,
+      offset: 50,
+    });
+
     Promise.all([
       fetchApi<CarouselImage[]>("/api/carousel"),
       fetchApi<FeaturedProducts>("/api/products/featured"),
@@ -75,36 +82,11 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [carousel.length]);
 
-  // GSAP Seesaw Animations
-  useEffect(() => {
-    if (loading) return;
-    
-    const playSeesaw = (el: HTMLElement) => {
-      gsap.killTweensOf(el);
-      const tl = gsap.timeline();
-      const angle = 4;    // degrees of tilt
-      const speed = 0.2;  // seconds per half-swing
-
-      tl.set(el, { rotation: 0 })
-        // Swing 1
-        .to(el, { duration: speed, rotation: -angle, ease: "power1.inOut" })
-        .to(el, { duration: speed * 2, rotation: angle, ease: "power1.inOut" })
-        // Swing 2
-        .to(el, { duration: speed * 2, rotation: -angle, ease: "power1.inOut" })
-        .to(el, { duration: speed * 2, rotation: angle, ease: "power1.inOut" })
-        // Swing 3
-        .to(el, { duration: speed * 2, rotation: -angle, ease: "power1.inOut" })
-        // Settle
-        .to(el, { duration: speed * 2, rotation: 0, ease: "elastic.out(1, 0.4)" });
-    };
-
-    if (heroTitleRef.current) playSeesaw(heroTitleRef.current);
-  }, [loading]);
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 space-y-12">
-        <Skeleton className="w-full h-[500px] rounded-2xl" />
+      <div className="container mx-auto px-4 py-8 space-y-12 min-h-screen">
+        <Skeleton className="w-full h-[85vh] rounded-2xl" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-xl" />
@@ -131,10 +113,11 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-black/30 z-10" /> {/* Overlay for readability */}
                 <Image
                   src={carouselImageUrl(img.image_filename)}
-                  alt={`Health and lifestyle ${idx + 1}`}
+                  alt="Zing Healthy Treats"
                   fill
                   className="object-cover"
                   priority={idx === 0}
+                  sizes="100vw"
                   unoptimized
                 />
               </div>
@@ -147,7 +130,7 @@ export default function HomePage() {
         <div className="hero-content container mx-auto px-4 relative z-20">
           <div className="max-w-3xl" data-aos="fade-up">
             <div ref={textContainerRef}>
-              <h1 ref={heroTitleRef} className="text-5xl md:text-8xl font-heading font-bold text-white leading-[1.1] mb-6 drop-shadow-lg">
+              <h1 className="text-5xl md:text-8xl font-heading font-bold text-white leading-[1.1] mb-6 drop-shadow-lg">
                 {textSets[currentTextIndex].title} <br />
                 <span className="italic text-zing-yellow">{textSets[currentTextIndex].highlight}</span>
               </h1>
@@ -277,7 +260,7 @@ export default function HomePage() {
             <p className="text-slate-500 font-medium max-w-2xl">Everything you need to know about our products and services.</p>
           </div>
           <div className="max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="100">
-            <Accordion type="single" collapsible className="w-full space-y-4">
+            <Accordion type="single" className="w-full space-y-4">
               {faqs.map((faq) => (
                 <AccordionItem key={faq.id} value={`item-${faq.id}`} className="bg-white border rounded-xl px-6 shadow-sm">
                   <AccordionTrigger className="text-left font-bold text-brand-blue hover:text-brand-mustard py-5 text-lg">

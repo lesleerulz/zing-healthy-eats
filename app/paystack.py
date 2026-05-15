@@ -12,7 +12,7 @@ class PaystackClient:
             "Content-Type": "application/json"
         }
 
-    def initialize_transaction(self, email, amount, callback_url, reference=None, metadata=None):
+    def initialize_transaction(self, email, amount, callback_url, reference=None, metadata=None, channels=None):
         """
         Initialize a transaction.
         Amount should be in the smallest currency unit (e.g., kobo for NGN, cents for USD/KES).
@@ -27,6 +27,8 @@ class PaystackClient:
             data["reference"] = reference
         if metadata:
             data["metadata"] = metadata
+        if channels:
+            data["channels"] = channels
 
         try:
             response = requests.post(api_url, json=data, headers=self.headers, timeout=30)

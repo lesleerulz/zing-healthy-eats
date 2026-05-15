@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | Zing Healthy Treats",
   },
   description:
-    "Discover delicious, healthy treats delivered to your doorstep. Zing Healthy Treats — your amazing online store for wholesome snacks and meals.",
+    "Discover delicious, healthy treats ready for collection at our Nairobi CBD station. Zing Healthy Treats — your premium source for wholesome snacks and meals.",
 };
 
 export default function RootLayout({

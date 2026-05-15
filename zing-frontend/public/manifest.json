@@ -1,0 +1,16 @@
+{
+  "name": "Zing Healthy Treats",
+  "short_name": "Zing",
+  "description": "Delicious, healthy treats ready for collection at our Nairobi CBD station.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a3c5e",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -17,7 +17,6 @@ import {
   LogOut,
   Package,
   LayoutDashboard,
-  Truck,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -105,15 +104,16 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center gap-4">
-              <Link href="/cart" className="relative group transition-transform hover:scale-105">
-                <div className="bg-zing-yellow text-zing-navy rounded-md p-2 relative">
-                  <ShoppingBag strokeWidth={1.5} className="h-5 w-5" />
+              <Link href="/cart" className="relative group flex items-center gap-2.5 transition-transform hover:scale-105">
+                <div className="bg-zing-yellow text-zing-navy rounded-lg p-2 relative">
+                  <ShoppingBag strokeWidth={2} className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full border-2 border-zing-navy shadow-sm">
+                      {cartCount}
+                    </Badge>
+                  )}
                 </div>
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full border-2 border-zing-navy">
-                    {cartCount}
-                  </Badge>
-                )}
+                <span className="text-sm font-bold text-white group-hover:text-brand-mustard transition-colors hidden xl:inline">Cart</span>
               </Link>
 
               {user ? (
@@ -163,15 +163,16 @@ export default function Navbar() {
           {/* Mobile: Cart + Menu */}
           <div className="flex items-center gap-2 lg:hidden">
             {user && (
-              <Link href="/cart">
-                <Button variant="ghost" size="icon" className="relative text-white">
-                  <ShoppingBag className="h-5 w-5" />
+              <Link href="/cart" className="flex items-center gap-1.5 mr-1 group">
+                <div className="relative p-2 bg-white/5 rounded-lg group-active:bg-white/10 transition-colors">
+                  <ShoppingBag className="h-5 w-5 text-white" />
                   {cartCount > 0 && (
                     <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-red-500 text-white text-[9px] rounded-full">
                       {cartCount}
                     </Badge>
                   )}
-                </Button>
+                </div>
+                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider">Cart</span>
               </Link>
             )}
 

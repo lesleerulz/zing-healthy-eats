@@ -8,7 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Phone, CreditCard, Building2, MapPin, Truck } from "lucide-react";
+import {
+  Phone,
+  CreditCard,
+  Building2,
+  Truck,
+  MapPin,
+  Navigation,
+  ShieldCheck,
+  Loader2,
+  Info,
+} from "lucide-react";
 import { toast } from "sonner";
 
 type CheckoutStep = "delivery" | "payment";
@@ -16,25 +26,22 @@ type CheckoutStep = "delivery" | "payment";
 export default function CheckoutPage() {
   const { user, cart, refreshCart } = useAuth();
   const router = useRouter();
-  
+
   // App state
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState<CheckoutStep>("delivery");
-  
+
   // Delivery State
-  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryLat, setDeliveryLat] = useState<number | null>(null);
-  const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
-  const [deliveryFee, setDeliveryFee] = useState<number>(0);
-  const [deliveryMessage, setDeliveryMessage] = useState("");
-  const [calculatingLocation, setCalculatingLocation] = useState(false);
+  const [deliveryType] = useState<"pickup">("pickup");
+  const [deliveryAddress] = useState("Pickup Station - Nairobi CBD");
+  const [deliveryFee] = useState<number>(0);
+
 
   // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "paystack">("mpesa");
-  const [phone, setPhone] = useState("");
-  const [savePhone, setSavePhone] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "paystack">(
+    "mpesa"
+  );
 
   useEffect(() => {
     if (!user) {
@@ -44,10 +51,7 @@ export default function CheckoutPage() {
     refreshCart().finally(() => setLoading(false));
   }, [user, router, refreshCart]);
 
-  useEffect(() => {
-    if (user?.saved_phone) setPhone(user.saved_phone);
-    if (user?.address && !deliveryAddress) setDeliveryAddress(user.address);
-  }, [user]);
+
 
   if (loading) {
     return (
@@ -63,106 +67,88 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const handleCalculateFee = async (lat: number, lng: number) => {
-    setCalculatingLocation(true);
-    try {
-      const result = await fetchApi<{ fee: number; distance: number; message: string }>("/api/checkout/calculate-delivery", {
-        method: "POST",
-        body: JSON.stringify({
-          delivery_type: deliveryType,
-          delivery_lat: lat,
-          delivery_lng: lng,
-        }),
-      });
-      setDeliveryFee(result.fee);
-      setDeliveryMessage(result.message);
-      setDeliveryLat(lat);
-      setDeliveryLng(lng);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to calculate delivery fee");
-    } finally {
-      setCalculatingLocation(false);
-    }
-  };
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setCalculatingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        handleCalculateFee(position.coords.latitude, position.coords.longitude);
-      },
-      (error) => {
-        setCalculatingLocation(false);
-        console.error(error);
-        toast.error("Unable to retrieve your location. We will contact you to arrange delivery.");
-        setDeliveryMessage("Location unavailable. We will contact you to arrange delivery and confirm the fee.");
-        setDeliveryFee(0);
-      }
-    );
-  };
-
+  // ─── Continue to Payment Step ──────────────────────────
   const handleContinueToPayment = () => {
-    if (deliveryType === "delivery" && !deliveryAddress.trim()) {
-      toast.error("Please enter a delivery address.");
-      return;
-    }
     setStep("payment");
   };
 
-  const handleMpesaCheckout = async () => {
-    if (!phone.trim()) {
-      toast.error("Phone number is required.");
-      return;
-    }
-    setProcessing(true);
-    try {
-      const result = await fetchApi<{ message: string; order: any; reference: string }>("/api/checkout/mpesa", {
-        method: "POST",
-        body: JSON.stringify({
-          phone_number: phone,
-          save_phone: savePhone,
-          delivery_type: deliveryType,
-          delivery_address: deliveryAddress,
-          delivery_lat: deliveryLat,
-          delivery_lng: deliveryLng,
-        }),
-      });
-      toast.success(result.message);
-      await refreshCart();
-      router.push("/orders");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Payment failed");
-    } finally {
-      setProcessing(false);
-    }
-  };
 
-  const handlePaystackCheckout = async () => {
+  // ─── Checkout Handlers ─────────────────────────────────
+  const handleCheckout = async (method: "mpesa" | "card") => {
     setProcessing(true);
     try {
-      const result = await fetchApi<{ authorization_url: string }>("/api/checkout/paystack/initialize", {
-        method: "POST",
-        body: JSON.stringify({
-          delivery_type: deliveryType,
-          delivery_address: deliveryAddress,
-          delivery_lat: deliveryLat,
-          delivery_lng: deliveryLng,
-        }),
-      });
+      const result = await fetchApi<{ authorization_url: string }>(
+        "/api/checkout/paystack/initialize",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            delivery_type: "pickup",
+            delivery_address: "Pickup Station - Nairobi CBD",
+            method,
+          }),
+        }
+      );
       // Redirect to Paystack
       window.location.href = result.authorization_url;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Paystack initialization failed");
+      toast.error(
+        err instanceof Error ? err.message : "Payment initialization failed"
+      );
       setProcessing(false);
     }
   };
 
-  const totalAmount = cart.total + (deliveryType === "delivery" ? deliveryFee : 0);
+  const totalAmount = cart.total;
+
+
+  // If user is logged in but not verified, show a warning (placed after all hooks)
+  if (user && !user.is_verified && !loading) {
+    return (
+      <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-brand-mustard">
+          <CardHeader className="text-center">
+            <div className="mx-auto h-16 w-16 bg-brand-mustard/10 rounded-full flex items-center justify-center mb-4">
+              <ShieldCheck className="h-8 w-8 text-brand-mustard" />
+            </div>
+            <CardTitle className="text-2xl text-brand-blue">Verification Required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 text-center">
+            <p className="text-slate-600 leading-relaxed">
+              To ensure a secure shopping experience, please verify your email address 
+              (<span className="font-semibold">{user.email}</span>) before placing an order.
+            </p>
+            
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 text-left">
+              <Info className="h-5 w-5 text-brand-blue shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-brand-blue mb-1">Check your inbox</p>
+                <p className="text-xs text-slate-600">
+                  We sent a 6-digit code to your email. <strong>Don't forget to check your spam or junk folder</strong> if you don't see it!
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button 
+                onClick={() => router.push("/verify-email")}
+                className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12"
+              >
+                Go to Verification Page
+              </Button>
+              <Button 
+                variant="ghost"
+                onClick={() => router.push("/cart")}
+                className="w-full text-slate-400 hover:text-slate-600"
+              >
+                Back to Cart
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -170,106 +156,77 @@ export default function CheckoutPage() {
 
       {/* Checkout Steps Indicator */}
       <div className="flex items-center mb-8">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${step === "delivery" ? "bg-brand-mustard text-brand-blue" : "bg-brand-blue text-white"}`}>1</div>
-        <div className={`flex-1 h-1 mx-4 ${step === "payment" ? "bg-brand-blue" : "bg-slate-200"}`}></div>
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${step === "payment" ? "bg-brand-mustard text-brand-blue" : "bg-slate-200 text-slate-500"}`}>2</div>
+        <div className="flex flex-col items-center">
+          <div
+            className={`flex items-center justify-center w-9 h-9 rounded-full font-bold text-sm transition-colors ${
+              step === "delivery"
+                ? "bg-brand-mustard text-brand-blue shadow-md"
+                : "bg-brand-blue text-white"
+            }`}
+          >
+            1
+          </div>
+          <span className="text-[10px] mt-1 text-slate-500 font-medium">
+            Info
+          </span>
+        </div>
+        <div
+          className={`flex-1 h-0.5 mx-3 rounded transition-colors ${
+            step === "payment" ? "bg-brand-blue" : "bg-slate-200"
+          }`}
+        />
+        <div className="flex flex-col items-center">
+          <div
+            className={`flex items-center justify-center w-9 h-9 rounded-full font-bold text-sm transition-colors ${
+              step === "payment"
+                ? "bg-brand-mustard text-brand-blue shadow-md"
+                : "bg-slate-200 text-slate-500"
+            }`}
+          >
+            2
+          </div>
+          <span className="text-[10px] mt-1 text-slate-500 font-medium">
+            Payment
+          </span>
+        </div>
       </div>
 
+      {/* ═══════════════════════════════════════════════════ */}
+      {/*  STEP 1: DELIVERY                                   */}
+      {/* ═══════════════════════════════════════════════════ */}
       {step === "delivery" && (
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-brand-blue">Delivery Information</h2>
+          <h2 className="text-xl font-bold text-brand-blue">
+            Collection Information
+          </h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => {
-                setDeliveryType("delivery");
-                setDeliveryFee(0);
-                setDeliveryMessage("");
-              }}
-              className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col items-center justify-center gap-2 ${
-                deliveryType === "delivery"
-                  ? "border-brand-mustard bg-brand-mustard/5 shadow-md"
-                  : "border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              <Truck className={`h-8 w-8 ${deliveryType === "delivery" ? "text-brand-blue" : "text-slate-400"}`} />
-              <p className={`font-bold ${deliveryType === "delivery" ? "text-brand-blue" : "text-slate-500"}`}>Home Delivery</p>
-            </button>
 
-            <button
-              onClick={() => {
-                setDeliveryType("pickup");
-                setDeliveryFee(0);
-                setDeliveryMessage("Pickup is free at our Nairobi CBD station.");
-              }}
-              className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col items-center justify-center gap-2 ${
-                deliveryType === "pickup"
-                  ? "border-brand-mustard bg-brand-mustard/5 shadow-md"
-                  : "border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              <Building2 className={`h-8 w-8 ${deliveryType === "pickup" ? "text-brand-blue" : "text-slate-400"}`} />
-              <p className={`font-bold ${deliveryType === "pickup" ? "text-brand-blue" : "text-slate-500"}`}>Pickup Station</p>
-            </button>
-          </div>
 
-          {deliveryType === "delivery" && (
-            <Card className="border shadow-sm border-brand-mustard/30">
-              <CardContent className="pt-6 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-1 block">
-                    Street Address / Building / Landmark
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      type="text"
-                      placeholder="e.g. Westlands, Nairobi"
-                      value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                      className="pl-9"
-                    />
+          <Card className="border shadow-sm border-brand-mustard/30 bg-brand-mustard/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-brand-mustard/20 flex items-center justify-center shrink-0">
+                    <MapPin className="h-5 w-5 text-brand-blue" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-brand-blue font-semibold mb-1">
+                      Pickup Station — Nairobi CBD
+                    </p>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      You can pick up your order from our main station. We will
+                      notify you when it is ready.
+                    </p>
+                    <p className="text-sm font-bold text-brand-green mt-2">
+                      Fee: Free
+                    </p>
                   </div>
                 </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <p className="text-sm text-blue-800 mb-3">
-                    We calculate delivery fees based on your distance from our store. (0-5km: KSh 250, 5-10km: KSh 350)
-                  </p>
-                  <Button 
-                    onClick={handleGetLocation} 
-                    disabled={calculatingLocation}
-                    variant="outline"
-                    className="w-full bg-white border-blue-200 text-blue-600 hover:bg-blue-50"
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {calculatingLocation ? "Calculating..." : "Get Location & Calculate Fee"}
-                  </Button>
-
-                  {deliveryMessage && (
-                    <div className="mt-3 p-3 bg-white rounded-md border border-blue-100 text-sm text-slate-700 font-medium">
-                      {deliveryMessage}
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
-          )}
 
-          {deliveryType === "pickup" && (
-            <Card className="border shadow-sm border-brand-mustard/30 bg-brand-mustard/5">
-              <CardContent className="pt-6">
-                <p className="text-sm text-brand-blue font-medium leading-relaxed">
-                  You can pick up your order from our main station located in Nairobi CBD. 
-                  <br /><br />
-                  <strong>Fee:</strong> Free
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
+          {/* Continue Button */}
           <div className="pt-4 flex justify-end">
-            <Button 
+            <Button
               onClick={handleContinueToPayment}
               className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl px-8 h-12"
             >
@@ -279,11 +236,18 @@ export default function CheckoutPage() {
         </div>
       )}
 
+      {/* ═══════════════════════════════════════════════════ */}
+      {/*  STEP 2: PAYMENT                                    */}
+      {/* ═══════════════════════════════════════════════════ */}
       {step === "payment" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-brand-blue">Payment</h2>
-            <Button variant="ghost" onClick={() => setStep("delivery")} className="text-sm text-slate-500">
+            <Button
+              variant="ghost"
+              onClick={() => setStep("delivery")}
+              className="text-sm text-slate-500"
+            >
               &larr; Back to Delivery
             </Button>
           </div>
@@ -299,13 +263,28 @@ export default function CheckoutPage() {
                   <span className="text-slate-600">
                     {item.product?.title} × {item.quantity}
                   </span>
-                  <span className="font-medium">KSh {item.subtotal.toLocaleString()}</span>
+                  <span className="font-medium">
+                    KSh {item.subtotal.toLocaleString()}
+                  </span>
                 </div>
               ))}
-              <div className="border-t pt-3 mt-3 flex justify-between text-sm">
-                <span className="text-slate-600">Delivery ({deliveryType})</span>
-                <span className="font-medium">KSh {deliveryType === "delivery" ? deliveryFee.toLocaleString() : "0"}</span>
+
+              {/* Collection info */}
+              <div className="border-t pt-3 mt-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Pickup (Free)
+                  </span>
+                  <span className="font-medium text-brand-green">
+                    KSh 0
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 ml-5">
+                  Nairobi CBD Collection Station
+                </p>
               </div>
+
               <div className="border-t pt-3 mt-3 flex justify-between">
                 <span className="text-lg font-semibold">Total</span>
                 <span className="text-lg font-bold text-brand-blue">
@@ -328,7 +307,9 @@ export default function CheckoutPage() {
               >
                 <Phone className="h-6 w-6 text-brand-green mb-2" />
                 <p className="font-semibold text-brand-blue text-sm">M-Pesa</p>
-                <p className="text-[10px] text-slate-500 mt-1">STK Push via Paystack</p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Hosted Checkout
+                </p>
               </button>
 
               <button
@@ -340,74 +321,41 @@ export default function CheckoutPage() {
                 }`}
               >
                 <CreditCard className="h-6 w-6 text-orange-500 mb-2" />
-                <p className="font-semibold text-brand-blue text-sm">Card/Other</p>
+                <p className="font-semibold text-brand-blue text-sm">
+                  Card/Other
+                </p>
                 <p className="text-[10px] text-slate-500 mt-1">Via Paystack</p>
               </button>
             </div>
 
-            {/* Paystack Form */}
-            {paymentMethod === "paystack" && (
-              <Card className="border shadow-sm">
-                <CardContent className="pt-6 space-y-4">
-                  <div className="bg-orange-50 p-4 rounded-lg">
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      You will be redirected to <strong>Paystack</strong> to securely complete your payment using Card, Bank Transfer, or other available methods.
-                    </p>
-                  </div>
+            <Card className="border shadow-sm">
+              <CardContent className="pt-6 space-y-4">
+                <div className="bg-brand-blue/5 p-4 rounded-xl border border-brand-blue/10">
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    You will be redirected to <strong>Paystack</strong> to
+                    securely complete your payment using {paymentMethod === "mpesa" ? "M-Pesa" : "Card, Bank Transfer, or other methods"}.
+                  </p>
+                </div>
 
-                  <Button
-                    onClick={handlePaystackCheckout}
-                    disabled={processing}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl h-12 text-base"
-                  >
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    {processing ? "Redirecting..." : `Pay KSh ${totalAmount.toLocaleString()}`}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* M-Pesa Form */}
-            {paymentMethod === "mpesa" && (
-              <Card className="border shadow-sm">
-                <CardContent className="pt-6 space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 mb-1 block">
-                      M-Pesa Phone Number
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input
-                        type="tel"
-                        placeholder="0712345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={savePhone}
-                      onChange={(e) => setSavePhone(e.target.checked)}
-                      className="rounded"
-                    />
-                    Save phone number for future checkouts
-                  </label>
-
-                  <Button
-                    onClick={handleMpesaCheckout}
-                    disabled={processing}
-                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white font-bold rounded-xl h-12 text-base"
-                  >
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    {processing ? "Processing..." : `Pay KSh ${totalAmount.toLocaleString()}`}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                <Button
+                  onClick={() => handleCheckout(paymentMethod === "mpesa" ? "mpesa" : "card")}
+                  disabled={processing}
+                  className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12 text-base shadow-lg shadow-brand-blue/20"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Redirecting to Paystack...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-5 w-5 mr-2" />
+                      {`Pay KSh ${totalAmount.toLocaleString()}`}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
