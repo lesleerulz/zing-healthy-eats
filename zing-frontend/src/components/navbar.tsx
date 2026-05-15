@@ -144,6 +144,7 @@ export default function Navbar() {
                             <LayoutDashboard className="h-4 w-4 text-slate-400" />
                             Admin Dashboard
                           </a>
+                        )}
 
                         <div className="border-t my-1" />
                         <button onClick={() => { logout(); setDropdownOpen(false); router.push("/"); }} className="flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 w-full text-left transition-colors">

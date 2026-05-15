@@ -20,6 +20,7 @@ from app.models import (
     Order, OrderItem, Product, SiteSetting, SocialLink, TeamMember, User
 )
 from app.paystack import PaystackClient
+from app.tokens import get_reset_token, verify_reset_token
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -218,6 +219,75 @@ def api_verify_email():
     user.verification_code_expires_at = None
     db.session.commit()
     return jsonify({"message": "Your account has been successfully verified!"}), 200
+
+
+@api_bp.route("/auth/forgot-password", methods=["POST"])
+def api_forgot_password():
+    """Handle forgot password request by sending a reset link."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+
+    if not email:
+        return jsonify({"error": "Email is required."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    
+    # For security, we don't confirm if the email exists in our DB or not.
+    # We just say "If an account exists, an email has been sent."
+    if user:
+        try:
+            token = get_reset_token(user)
+            frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+            reset_url = f"{frontend_url}/reset-password?token={token}"
+
+            mail = current_app.extensions['mail']
+            msg = Message(
+                'Password Reset Request',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[user.email]
+            )
+            msg.html = f'''
+            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 12px; background: #fff;">
+                <div style="text-align:center; margin-bottom: 24px;">
+                    <span style="font-size:28px; font-weight:bold; color:#E1AD01;">Zing Healthy Eats</span>
+                </div>
+                <h2 style="color:#1a3c5e; text-align:center; margin-bottom:8px;">Reset Your Password</h2>
+                <p style="color:#555; text-align:center; margin-bottom:28px;">To reset your password, please click the button below. This link expires in 30 minutes.</p>
+                <div style="text-align:center; margin-bottom:28px;">
+                    <a href="{reset_url}" style="background-color:#0B0E14; color:#fff; padding:14px 28px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">Reset Password</a>
+                </div>
+                <p style="color:#888; font-size:12px; text-align:center;">If you did not request this, please ignore this email. No changes will be made to your account.</p>
+            </div>
+            '''
+            mail.send(msg)
+        except Exception as e:
+            current_app.logger.error(f"Failed to send reset email to {email}: {e}")
+            # Still return success to prevent user enumeration
+
+    return jsonify({"message": "If an account exists with that email, a password reset link has been sent."}), 200
+
+
+@api_bp.route("/auth/reset-password", methods=["POST"])
+def api_reset_password():
+    """Reset user password using a valid token."""
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or "").strip()
+    password = data.get("password") or ""
+
+    if not token or not password:
+        return jsonify({"error": "Token and new password are required."}), 400
+
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long."}), 400
+
+    user = verify_reset_token(token)
+    if not user:
+        return jsonify({"error": "The reset link is invalid or has expired."}), 400
+
+    user.set_password(password)
+    db.session.commit()
+
+    return jsonify({"message": "Your password has been updated! You can now log in."}), 200
 
 
 @api_bp.route("/auth/google/login", methods=["GET"])

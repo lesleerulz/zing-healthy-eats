@@ -306,7 +306,11 @@
                                     </span>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-outline-primary border-0"><i class="bi bi-pencil-square"></i></a>
-                                        <a href="{{ url_for('delete_product', product_id=product.id) }}" class="btn btn-outline-danger border-0" onclick="return confirm('Delete?');"><i class="bi bi-trash-fill"></i></a>
+                                        <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-danger border-0" onclick="return confirm('Delete this product permanently?');">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
