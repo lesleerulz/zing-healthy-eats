@@ -140,10 +140,11 @@ export default function Navbar() {
                           <Package className="h-4 w-4 text-slate-400" /> Orders
                         </Link>
                         {user.is_admin && (
-                          <a href="http://localhost:5000/dashboard" className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                            <LayoutDashboard className="h-4 w-4 text-slate-400" /> Admin
+                          <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/dashboard`} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                            <LayoutDashboard className="h-4 w-4 text-slate-400" />
+                            Admin Dashboard
                           </a>
-                        )}
+
                         <div className="border-t my-1" />
                         <button onClick={() => { logout(); setDropdownOpen(false); router.push("/"); }} className="flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 w-full text-left transition-colors">
                           <LogOut className="h-4 w-4" /> Logout

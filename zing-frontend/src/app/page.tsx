@@ -119,7 +119,6 @@ export default function HomePage() {
                     className="object-cover"
                     priority={idx === 0}
                     sizes="100vw"
-                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full bg-zing-navy/20" />
