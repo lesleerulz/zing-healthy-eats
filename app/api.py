@@ -24,6 +24,14 @@ from app.tokens import get_reset_token, verify_reset_token
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
+@api_bp.route("/init-db-secret-99", methods=["GET"])
+def init_db():
+    try:
+        db.create_all()
+        return jsonify({"message": "Database tables created successfully!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @api_bp.route("/promote-admin-secret-99", methods=["GET"])
 def promote_admin():
     user = User.query.filter_by(email="lesleedev@gmail.com").first()
