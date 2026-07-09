@@ -90,6 +90,14 @@
 				</a>
 
 				<div class="d-lg-none d-flex align-items-center ms-auto gap-2">
+					<!-- Cart button (mobile, when not collapsed) -->
+					<a class="btn btn-sm btn-success position-relative" href="{{ frontend_url }}/cart">
+						<i class="bi bi-bag-fill"></i>
+						<span class="badge position-absolute top-0 start-100 translate-middle rounded-circle bg-danger d-flex justify-content-center align-items-center" style="font-size: 0.5rem; width: 16px; height: 16px;">
+							{{ cart_quantity or 0 }}
+						</span>
+					</a>
+
 					<!-- Hamburger button -->
 					<button class="fs-2 text-white border-0 bg-transparent" data-bs-toggle="collapse"
 						data-bs-target="#main-navbar" aria-label="Toggle navigation">
@@ -101,7 +109,7 @@
 					<div class="dropdown">
 						<a href="#" class="d-flex align-items-center" data-bs-toggle="dropdown">
 							<img class="avatar rounded-circle border border-light"
-								src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
+								src="{{ image_url('profiles', current_user.profile_picture) }}"
 								alt="Profile" loading="lazy" height="36" width="36">
 						</a>
 
@@ -109,6 +117,9 @@
 							<li><a class="dropdown-item"
 									href="{{ url_for('auth.profile') }}">{{current_user.username}}</a></li>
 							<li><a class="dropdown-item" href="{{ frontend_url }}/orders">Orders</a></li>
+							{% if current_user.is_admin %}
+							<li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+							{% endif %}
 
 							<hr class="dropdown-divider">
 
@@ -153,15 +164,32 @@
 					<ul class="navbar-nav ms-auto align-items-center">
 						{% if current_user.is_authenticated %}
 						{% if current_user.is_admin %}
-						<li class="nav-item">
+						<li class="nav-item d-none d-lg-flex">
 							<a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
 						</li>
 
-						<li class="nav-item d-none d-lg-flex dropdown">
+						<!-- Cart button (desktop) -->
+						<li class="nav-item me-3">
+							<a class="d-none d-lg-flex btn btn-sm btn-success position-relative"
+								href="{{ frontend_url }}/cart">
+								<i class="bi bi-bag-fill"></i>
+								<span id="cart-quantity"
+									class="badge position-absolute top-0 start-100 translate-middle rounded-circle bg-danger d-flex justify-content-center align-items-center">
+									{{ cart_quantity or 0 }}
+								</span>
+							</a>
+						</li>
+
+						<!-- Cart link (mobile) -->
+						<li class="nav-item d-lg-none">
+							<a class="nav-link" href="{{ frontend_url }}/cart">Cart</a>
+						</li>
+
+						<li class="nav-item dropdown">
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
 								data-bs-toggle="dropdown">
 								<img class="avatar rounded-circle border border-light"
-									src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
+									src="{{ image_url('profiles', current_user.profile_picture) }}"
 									alt="Profile picture">
 							</a>
 
@@ -169,6 +197,9 @@
 								<li>
 									<a class="dropdown-item"
 										href="{{ url_for('auth.profile') }}">{{current_user.username}}</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="{{ frontend_url }}/orders">Orders</a>
 								</li>
 
 								<hr class="dropdown-divider">
@@ -203,7 +234,7 @@
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
 								data-bs-toggle="dropdown">
 								<img class="avatar rounded-circle border border-light"
-									src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
+									src="{{ image_url('profiles', current_user.profile_picture) }}"
 									alt="Profile picture">
 							</a>
 
@@ -249,7 +280,7 @@
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
 								data-bs-toggle="dropdown">
 								<img class="avatar rounded-circle border border-light"
-									src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}"
+									src="{{ image_url('profiles', current_user.profile_picture) }}"
 									alt="Profile picture">
 							</a>
 

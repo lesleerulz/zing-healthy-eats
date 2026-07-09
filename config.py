@@ -12,8 +12,15 @@ class Config:
     """
 
     SECRET_KEY = os.environ.get("SECRET_KEY") or "change-this-in-production"
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    _raw_db_url = os.environ.get("DATABASE_URL") or f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    if _raw_db_url.startswith("postgresql") and "sslmode" not in _raw_db_url:
+        _raw_db_url += "?sslmode=require"
+    SQLALCHEMY_DATABASE_URI = _raw_db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
 
     # Images upload configuration.
     IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -55,3 +62,10 @@ class Config:
     # Store Location (Default: Nairobi CBD for distance calculation)
     STORE_LAT = float(os.environ.get("STORE_LAT", -1.2921))
     STORE_LNG = float(os.environ.get("STORE_LNG", 36.8219))
+
+    # Supabase Configuration
+    SUPABASE_URL = os.environ.get("SUPABASE_URL") or "https://tetcosmsdmhlihasvext.supabase.co"
+    SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") or ""
+    SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY") or ""
+    SUPABASE_STORAGE_BUCKET = "images"
+    SUPABASE_STORAGE_URL = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}"

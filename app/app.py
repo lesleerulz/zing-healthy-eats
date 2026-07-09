@@ -8,6 +8,7 @@ from flask_login import current_user, LoginManager, login_required
 from sqlalchemy import func, or_
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
+from app.supabase_storage import upload_from_fileobj, delete_file
 
 from flask_compress import Compress
 from flask_cors import CORS
@@ -251,12 +252,7 @@ def create_app() -> Flask:
              image_id = request.form.get("delete_id")
              image = CarouselImage.query.get_or_404(image_id)
              
-             image_path = os.path.join(current_app.config["CAROUSEL_PICTURE_FOLDER"], image.image_filename)
-             if os.path.exists(image_path):
-                 try:
-                    os.remove(image_path)
-                 except Exception:
-                    pass # Continue deletion even if file missing
+             delete_file(f"carousel/{image.image_filename}")
                  
              db.session.delete(image)
              db.session.commit()
@@ -266,16 +262,13 @@ def create_app() -> Flask:
             # Upload logic
             file = request.files["carousel_image"]
             if file and file.filename != "" and allowed_file(file.filename):
-                upload_folder = current_app.config["CAROUSEL_PICTURE_FOLDER"]
-                if not os.path.exists(upload_folder):
-                    os.makedirs(upload_folder)
-                    
                 filename = secure_filename(file.filename)
                 # Ensure unique filename to prevent overwrites
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"{timestamp}_{filename}"
                 
-                file.save(os.path.join(upload_folder, filename))
+                file.seek(0)
+                upload_from_fileobj(file, f"carousel/{filename}")
                 
                 new_image = CarouselImage(image_filename=filename)
                 db.session.add(new_image)
@@ -437,19 +430,15 @@ def create_app() -> Flask:
             original_price_val = request.form.get("original_price")
             original_price = float(original_price_val) if original_price_val else None
             quantity = int(request.form["quantity"])
-            category_id = request.form.get("category_id")
-            image_file = request.files["image"]
-
-            # Ensure upload folder exists.
-            upload_folder = current_app.config["PRODUCT_PICTURE_FOLDER"]
-            if not os.path.exists(upload_folder):
-                os.makedirs(upload_folder)
+            category_id_val = request.form.get("category_id")
+            category_id = int(category_id_val) if category_id_val else None
+            image_file = request.files.get("image")
 
             # Save uploaded image or use default.
             if image_file and image_file.filename != "" and allowed_file(image_file.filename):
                 filename = secure_filename(image_file.filename)
-                image_path = os.path.join(upload_folder, filename)
-                image_file.save(image_path)
+                image_file.seek(0)
+                upload_from_fileobj(image_file, f"products/{filename}")
             else:
                 filename = current_app.config["DEFAULT_PRODUCT_PICTURE"]
 
@@ -469,16 +458,16 @@ def create_app() -> Flask:
 
             # Handle multiple images (including the primary one)
             images = request.files.getlist("image")
+            seen = set()
             for img in images:
                 if img and img.filename != "" and allowed_file(img.filename):
                     img_filename = secure_filename(img.filename)
-                    # Avoid re-saving if it's the primary (already saved above)
-                    img_path = os.path.join(upload_folder, img_filename)
-                    if not os.path.exists(img_path):
-                         img.save(img_path)
-                    
-                    new_product_image = ProductImage(product_id=product.id, image_filename=img_filename)
-                    db.session.add(new_product_image)
+                    if img_filename not in seen:
+                        seen.add(img_filename)
+                        img.seek(0)
+                        upload_from_fileobj(img, f"products/{img_filename}")
+                        new_product_image = ProductImage(product_id=product.id, image_filename=img_filename)
+                        db.session.add(new_product_image)
 
             db.session.commit()
             flash("Product added successfully.", "success")
@@ -529,16 +518,13 @@ def create_app() -> Flask:
             if "photo" in request.files:
                  file = request.files["photo"]
                  if file and file.filename != "" and allowed_file(file.filename):
-                      # Delete old image if it's not a default? (Assuming not tracking defaults strictly here, but simple replace)
-                      old_image_path = os.path.join(current_app.config["TEAM_PICTURE_FOLDER"], member.image_filename)
-                      if os.path.exists(old_image_path):
-                           try: os.remove(old_image_path)
-                           except: pass
+                      delete_file(f"team/{member.image_filename}")
                       
                       filename = secure_filename(file.filename)
                       timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                       filename = f"{timestamp}_{filename}"
-                      file.save(os.path.join(current_app.config["TEAM_PICTURE_FOLDER"], filename))
+                      file.seek(0)
+                      upload_from_fileobj(file, f"team/{filename}")
                       member.image_filename = filename
             
             db.session.commit()
@@ -602,44 +588,37 @@ def create_app() -> Flask:
             original_price_val = request.form.get("original_price")
             product.original_price = float(original_price_val) if original_price_val else None
             product.quantity = int(request.form["quantity"])
-            product.category_id = request.form.get("category_id")
+            category_id_val = request.form.get("category_id")
+            product.category_id = int(category_id_val) if category_id_val else None
             product.is_peoples_choice = True if request.form.get("is_peoples_choice") == "on" else False
 
-            # Ensure upload folder exists.
-            upload_folder = current_app.config["PRODUCT_PICTURE_FOLDER"]
-
-            if not os.path.exists(upload_folder):
-                os.makedirs(upload_folder)
-
-            image_file = request.files["image"]
+            image_file = request.files.get("image")
             # Handle image replacement if provided.
             if image_file and image_file.filename != "" and allowed_file(image_file.filename):
                 # Remove old image if not default.
-                old_image = os.path.join(upload_folder, product.image)
-
-                if (product.image != current_app.config["DEFAULT_PRODUCT_PICTURE"] and os.path.exists(old_image)):
-                    os.remove(old_image)
+                if product.image != current_app.config["DEFAULT_PRODUCT_PICTURE"]:
+                    delete_file(f"products/{product.image}")
 
                 # Save new image.
                 filename = secure_filename(image_file.filename)
-                image_path = os.path.join(upload_folder, filename)
-                image_file.save(image_path)
+                image_file.seek(0)
+                upload_from_fileobj(image_file, f"products/{filename}")
                 product.image = filename
             
             # Add ALL uploaded images to the gallery (ProductImage)
             images = request.files.getlist("image")
+            seen = set()
             for img in images:
                 if img and img.filename != "" and allowed_file(img.filename):
                     img_filename = secure_filename(img.filename)
-                    img_path = os.path.join(upload_folder, img_filename)
-                    
-                    # Save if not exists (might have been saved by the block above if it was the first one)
-                    if not os.path.exists(img_path):
-                        img.save(img_path)
-                    
-                    # Add to database
-                    new_product_image = ProductImage(product_id=product.id, image_filename=img_filename)
-                    db.session.add(new_product_image)
+                    if img_filename not in seen:
+                        seen.add(img_filename)
+                        img.seek(0)
+                        upload_from_fileobj(img, f"products/{img_filename}")
+                        
+                        # Add to database
+                        new_product_image = ProductImage(product_id=product.id, image_filename=img_filename)
+                        db.session.add(new_product_image)
 
             db.session.commit()
             flash("Product updated successfully.", "success")
@@ -801,9 +780,8 @@ def create_app() -> Flask:
             
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # Ensure folder exists
-            os.makedirs(app.config["ABOUT_PICTURE_FOLDER"], exist_ok=True)
-            file.save(os.path.join(app.config["ABOUT_PICTURE_FOLDER"], filename))
+            file.seek(0)
+            upload_from_fileobj(file, f"about/{filename}")
             
             # Update DB
             content = AboutContent.query.filter_by(section="about_hero").first()
@@ -833,9 +811,9 @@ def create_app() -> Flask:
             
             if name and role and file and allowed_file(file.filename):
                  filename = secure_filename(file.filename)
-                 # Ensure folder exists
-                 os.makedirs(app.config["TEAM_PICTURE_FOLDER"], exist_ok=True)
-                 file.save(os.path.join(app.config["TEAM_PICTURE_FOLDER"], filename))
+                 
+                 file.seek(0)
+                 upload_from_fileobj(file, f"team/{filename}")
                  
                  member = TeamMember(name=name, role=role, image_filename=filename)
                  db.session.add(member)
@@ -848,6 +826,7 @@ def create_app() -> Flask:
              member_id = request.form.get("member_id")
              member = TeamMember.query.get(member_id)
              if member:
+                 delete_file(f"team/{member.image_filename}")
                  db.session.delete(member)
                  db.session.commit()
                  flash("Team member removed.", "success")

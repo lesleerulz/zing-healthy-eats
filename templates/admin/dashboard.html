@@ -188,7 +188,7 @@
                                 <div class="col-md-6">
                                     <h6 class="text-muted small text-uppercase fw-bold mb-3">Customer Information</h6>
                                     <div class="d-flex align-items-center mb-3">
-                                        <img src="{{ url_for('static', filename='images/profile_pictures/' ~ order.user.profile_picture) }}" 
+                                        <img src="{{ image_url('profiles', order.user.profile_picture) }}" 
                                              class="rounded-circle shadow-sm me-3" style="width: 48px; height: 48px; object-fit: cover;">
                                         <div>
                                             <div class="fw-bold">{{ order.user.username }}</div>
@@ -238,7 +238,7 @@
                                                     <td class="ps-3 py-2">
                                                         <div class="d-flex align-items-center">
                                                             {% if item.product %}
-                                                                <img src="{{ url_for('static', filename='images/products/' ~ item.product.image) }}" 
+                                                                <img src="{{ image_url('products', item.product.image) }}" 
                                                                      class="rounded-2 me-2" style="width: 32px; height: 32px; object-fit: cover;">
                                                             {% else %}
                                                                 <div class="bg-secondary bg-opacity-10 rounded-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
@@ -287,12 +287,12 @@
                     <i class="bi bi-plus-lg me-1"></i> Add Product
                 </a>
             </div>
-            <div class="row g-3">
+            <div class="row g-3 mb-5">
                 {% for product in products %}
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden group">
                         <div class="d-flex p-3">
-                            <img src="{{ url_for('static', filename='images/products/' ~ product.image) }}" 
+                            <img src="{{ image_url('products', product.image) }}" 
                                  class="rounded-3 shadow-sm me-3" style="width: 80px; height: 80px; object-fit: cover;">
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -318,6 +318,47 @@
                     </div>
                 </div>
                 {% endfor %}
+            </div>
+
+            <!-- Manage Categories -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Manage Categories</h5>
+                    <button class="btn btn-sm btn-success rounded-pill px-3" data-bs-toggle="collapse" data-bs-target="#addCategoryForm"><i class="bi bi-folder-plus me-1"></i> Add Category</button>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="collapse mb-4" id="addCategoryForm">
+                        <form action="{{ url_for('add_category') }}" method="POST" class="bg-light p-4 rounded-4">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Category Name</label>
+                                    <input type="text" class="form-control rounded-pill" name="name" placeholder="e.g. Snacks, Drinks, Grains" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-success rounded-pill w-100 px-4">Create Category</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    {% if categories %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for category in categories %}
+                        <div class="d-inline-flex align-items-center bg-light rounded-pill px-3 py-2 shadow-sm border">
+                            <span class="fw-bold small me-2">{{ category.name }}</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill me-2">{{ category.products|length }}</span>
+                            <form action="{{ url_for('delete_category', category_id=category.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm text-danger border-0 p-0" onclick="return confirm('Delete category &ldquo;{{ category.name }}&rdquo;? Products in this category will become uncategorized.');">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small text-center py-3 mb-0">No categories yet. Create one above.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -370,7 +411,7 @@
                                 {% for member in team_members %}
                                 <div class="col-md-6">
                                     <div class="d-flex align-items-center p-3 border rounded-4 bg-white shadow-sm group">
-                                        <img src="{{ url_for('static', filename='images/about/team/' ~ member.image_filename) }}" 
+                                        <img src="{{ image_url('team', member.image_filename) }}" 
                                              class="rounded-circle shadow-sm me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                         <div class="flex-grow-1 overflow-hidden">
                                             <div class="fw-bold">{{ member.name }}</div>
@@ -403,7 +444,7 @@
                             {% set about_hero = about_sections.get('about_hero') %}
                             <div class="rounded-4 overflow-hidden mb-3 shadow-sm ratio ratio-16x9 bg-light">
                                 {% if about_hero %}
-                                <img src="{{ url_for('static', filename='images/about/' ~ about_hero.content) }}" class="object-fit-cover">
+                                <img src="{{ image_url('about', about_hero.content) }}" class="object-fit-cover">
                                 {% else %}
                                 <div class="d-flex align-items-center justify-content-center text-muted small">No Image Uploaded</div>
                                 {% endif %}

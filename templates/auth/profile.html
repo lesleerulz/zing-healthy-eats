@@ -15,7 +15,7 @@
     class="mb-5 p-5 d-flex flex-column flex-lg-row justify-content-center align-items-center align-items-lg-start gap-5 rounded border">
     <!-- Profile summary-->
     <div class="d-flex flex-column justify-content-center align-items-center">
-        <img class="mb-4 rounded-circle" width="256" height="256" src="{{ url_for('static', filename='images/profile_pictures/' + current_user.profile_picture) }}" alt="Profile picture">
+        <img class="mb-4 rounded-circle" width="256" height="256" src="{{ image_url('profiles', current_user.profile_picture) }}" alt="Profile picture">
         <h5 class="m-0">{{ current_user.username }}</h5>
         <small class="mb-4 fst-italic text-primary">{{ current_user.email }}</small>
 

@@ -7,19 +7,11 @@ from flask_mail import Message
 from .tokens import get_reset_token, verify_reset_token
 
 from app.models import db, CartItem, Order, OrderItem, User
+from app.supabase_storage import allowed_file, upload_from_fileobj, delete_file, get_public_url
 
-# Create blueprint.
 auth_bp = Blueprint("auth", __name__, template_folder="../templates/auth")
 
-# Require at least six characters.
 PASSWORD_PATTERN = re.compile(r"^.{6,}$")
-
-
-def allowed_file(filename: str) -> bool:
-    """
-    Check if filename extension is allowed.
-    """
-    return ("." in filename and filename.rsplit(".", 1)[1].lower() in current_app.config["IMAGE_EXTENSIONS"])
 
 
 # REGISTER
@@ -415,25 +407,15 @@ def profile():
                 flash("File type not allowed.", "danger")
                 return redirect(url_for("auth.profile"))
 
-            profile_picture_folder = current_app.config["PROFILE_PICTURE_FOLDER"]
-            if not os.path.exists(profile_picture_folder):
-                os.makedirs(profile_picture_folder)
-
-            # Remove old picture if it is not the default.
             old_filename = current_user.profile_picture
             default_pic = current_app.config["DEFAULT_PROFILE_PICTURE"]
             if old_filename != default_pic:
-                old_path = os.path.join(profile_picture_folder, old_filename)
-                if os.path.exists(old_path):
-                    os.remove(old_path)
+                delete_file(f"profiles/{old_filename}")
 
-            # Save new picture file.
             ext = file.filename.rsplit(".", 1)[1].lower()
             filename = secure_filename(f"user_{current_user.id}.{ext}")
-            upload_path = os.path.join(profile_picture_folder, filename)
-            file.save(upload_path)
+            upload_from_fileobj(file, f"profiles/{filename}")
 
-            # Update user record with new picture.
             current_user.profile_picture = filename
             db.session.commit()
             flash("Profile picture updated.", "success")
@@ -460,16 +442,9 @@ def delete_account():
     Delete user account and related data (profile picture, cart, orders).
     """
 
-    # Get profile picture folder and default picture filename.
-    profile_picture_folder = current_app.config["PROFILE_PICTURE_FOLDER"]
     default_pic = current_app.config["DEFAULT_PROFILE_PICTURE"]
-    
-    # Delete user's profile picture if it is not the default one.
     if current_user.profile_picture != default_pic:
-        pic_path = os.path.join(profile_picture_folder, current_user.profile_picture)
-        
-        if os.path.exists(pic_path):
-            os.remove(pic_path)
+        delete_file(f"profiles/{current_user.profile_picture}")
 
     # Delete all items from user's cart.
     CartItem.query.filter_by(user_id=current_user.id).delete()

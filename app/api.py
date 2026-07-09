@@ -11,7 +11,7 @@ from functools import wraps
 import math
 
 from flask import Blueprint, current_app, jsonify, request
-from flask_login import current_user
+from flask_login import current_user, login_user
 from sqlalchemy import func, or_
 from werkzeug.security import generate_password_hash
 
@@ -143,6 +143,7 @@ def api_register():
         current_app.logger.error(f"Failed to send verification email to {email}: {e}")
         message += " However, we couldn't send a verification email at this time."
 
+    login_user(user, remember=True)
     token = create_token(user.id)
     return jsonify({"token": token, "user": user.to_dict(), "message": message}), 201
 
@@ -164,6 +165,7 @@ def api_login():
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials."}), 401
 
+    login_user(user, remember=True)
     token = create_token(user.id)
     return jsonify({"token": token, "user": user.to_dict()})
 
@@ -348,6 +350,7 @@ def api_google_callback():
 def api_me():
     """Return the currently authenticated user's profile."""
     user = request.api_user
+    login_user(user, remember=True)
     orders_count = Order.query.filter_by(user_id=user.id).count()
     last_order = Order.query.filter_by(user_id=user.id).order_by(Order.created_at.desc()).first()
 

@@ -73,12 +73,12 @@
                                 <label class="form-label fw-bold small text-uppercase text-muted">Current Images</label>
                                 <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded-4 border border-light-subtle">
                                     <div class="position-relative">
-                                        <img src="{{ url_for('static', filename='images/products/' ~ product.image) }}" class="rounded-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                                        <img src="{{ image_url('products', product.image) }}" class="rounded-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
                                         <span class="position-absolute top-0 start-0 badge rounded-pill bg-brand-blue small m-1">Primary</span>
                                     </div>
                                     {% for img in product.images %}
                                         {% if img.image_filename != product.image %}
-                                            <img src="{{ url_for('static', filename='images/products/' ~ img.image_filename) }}" class="rounded-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                                            <img src="{{ image_url('products', img.image_filename) }}" class="rounded-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
                                         {% endif %}
                                     {% endfor %}
                                 </div>

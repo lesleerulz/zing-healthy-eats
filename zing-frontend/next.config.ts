@@ -4,30 +4,19 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: "https",
+        hostname: "tetcosmsdmhlihasvext.supabase.co",
+        pathname: "/storage/v1/object/public/images/**",
+      },
+      {
+        protocol: "https",
+        hostname: "zing-healthy-eats.vercel.app",
+        pathname: "/static/**",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         port: "5000",
-        pathname: "/static/**",
-      },
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "5000",
-        pathname: "/static/**",
-      },
-      {
-        protocol: "https",
-        hostname: "zinghealthytreats.com",
-        pathname: "/static/**",
-      },
-      {
-        protocol: "https",
-        hostname: "www.zinghealthytreats.com",
-        pathname: "/static/**",
-      },
-      {
-        protocol: "https",
-        hostname: "api.zinghealthytreats.com",
         pathname: "/static/**",
       },
     ],

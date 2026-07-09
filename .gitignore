@@ -10,3 +10,5 @@ dist/
 build/
 *_backup.png
 .venv/
+.vercel
+.env*
