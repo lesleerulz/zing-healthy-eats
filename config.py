@@ -12,7 +12,9 @@ class Config:
     """
 
     SECRET_KEY = os.environ.get("SECRET_KEY") or "change-this-in-production"
-    _raw_db_url = os.environ.get("DATABASE_URL") or f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    _raw_db_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    if _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
     if _raw_db_url.startswith("postgresql") and "sslmode" not in _raw_db_url:
         _raw_db_url += "?sslmode=require"
     SQLALCHEMY_DATABASE_URI = _raw_db_url
