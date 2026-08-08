@@ -545,27 +545,35 @@ def create_app() -> Flask:
 
         product = Product.query.get_or_404(product_id)
 
-        # Empty users' cart.
-        CartItem.query.filter_by(product_id=product.id).delete()
+        try:
+            # Nullify references in past order items so order history is preserved.
+            OrderItem.query.filter_by(product_id=product.id).update({"product_id": None})
 
-        # Remove image file if not default.
-        default_image = current_app.config["DEFAULT_PRODUCT_PICTURE"]
-        if product.image != default_image:
-            image_path = os.path.join(current_app.config["PRODUCT_PICTURE_FOLDER"], product.image)
+            # Empty users' cart.
+            CartItem.query.filter_by(product_id=product.id).delete()
 
-            if os.path.exists(image_path):
-                os.remove(image_path)
-                
-        # Remove additional images
-        for img in product.images:
-            img_path = os.path.join(current_app.config["PRODUCT_PICTURE_FOLDER"], img.image_filename)
-            if os.path.exists(img_path):
-                os.remove(img_path)
+            # Remove image file if not default.
+            default_image = current_app.config["DEFAULT_PRODUCT_PICTURE"]
+            if product.image != default_image:
+                image_path = os.path.join(current_app.config["PRODUCT_PICTURE_FOLDER"], product.image)
 
-        # Delete product record.
-        db.session.delete(product)
-        db.session.commit()
-        flash("Product deleted successfully.", "warning")
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+                    
+            # Remove additional images
+            for img in product.images:
+                img_path = os.path.join(current_app.config["PRODUCT_PICTURE_FOLDER"], img.image_filename)
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+
+            # Delete product record.
+            db.session.delete(product)
+            db.session.commit()
+            flash("Product deleted successfully.", "warning")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error deleting product: {str(e)}", "danger")
+
         return redirect(url_for("dashboard"))
 
     @app.route("/dashboard/edit-product/<int:product_id>", methods=["GET", "POST"])
