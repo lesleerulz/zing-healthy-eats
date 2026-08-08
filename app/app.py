@@ -12,12 +12,12 @@ from app.supabase_storage import upload_from_fileobj, delete_file
 
 from flask_compress import Compress
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, emit
+
 
 from app.auth import auth_bp
 from app.api import api_bp
 
-socketio = SocketIO(async_mode='threading')
+
 
 from app.models import db, AboutContent, CartItem, CarouselImage, Category, FAQ, Order, OrderItem, Product, ProductImage, SocialLink, TeamMember, User, SiteSetting
 from app.paystack import PaystackClient
@@ -51,25 +51,6 @@ def create_app() -> Flask:
     # Enable CORS for API routes and static files.
     CORS(app, resources={r"/api/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
     
-    # Initialize SocketIO
-    socketio.init_app(app, cors_allowed_origins="*")
-
-    @socketio.on('join_tracking_room')
-    def handle_join_tracking_room(data):
-        order_id = data.get('order_id')
-        if order_id:
-            room = f"order_{order_id}"
-            join_room(room)
-
-    @socketio.on('driver_location_update')
-    def handle_driver_location_update(data):
-        order_id = data.get('order_id')
-        lat = data.get('lat')
-        lng = data.get('lng')
-        if order_id and lat and lng:
-            room = f"order_{order_id}"
-            emit('location_update', {'lat': lat, 'lng': lng}, to=room)
-
 
     # Cache static files for 1 year (browser-side)
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
