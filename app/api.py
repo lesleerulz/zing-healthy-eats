@@ -1029,3 +1029,10 @@ def api_order_status(order_id):
             print(f"[API Order Status Query] Error for Order #{order.id}: {e}")
 
     return jsonify({"status": order.status, "order": order.to_dict()})
+
+@api_bp.route("/cron/keep-alive", methods=["GET"])
+def cron_keep_alive():
+    """Ping the database to keep it awake on free tiers."""
+    db = get_db()
+    db.table("categories").select("id").limit(1).execute()
+    return jsonify({"status": "awake", "message": "Database ping successful"}), 200
