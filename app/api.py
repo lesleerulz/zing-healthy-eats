@@ -1036,3 +1036,7 @@ def cron_keep_alive():
     db = get_db()
     db.table("categories").select("id").limit(1).execute()
     return jsonify({"status": "awake", "message": "Database ping successful"}), 200
+@api_bp.app_errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
