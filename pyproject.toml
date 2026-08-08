@@ -1,2 +1,7 @@
+[project]
+name = "zing-healthy-eats"
+version = "0.1.0"
+description = "Zing API"
+
 [tool.vercel]
 entrypoint = "api/index.py"
