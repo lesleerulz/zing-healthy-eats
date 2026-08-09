@@ -15,8 +15,13 @@ class Config:
     _raw_db_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or f"sqlite:///{os.path.join(basedir, 'database.db')}"
     if _raw_db_url.startswith("postgres://"):
         _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+        
+    import re
+    _raw_db_url = re.sub(r'([?&])schema=[^&]+', r'\1', _raw_db_url)
+    _raw_db_url = _raw_db_url.replace('?&', '?').rstrip('?&')
+
     if _raw_db_url.startswith("postgresql") and "sslmode" not in _raw_db_url:
-        _raw_db_url += "?sslmode=require"
+        _raw_db_url += "&sslmode=require" if "?" in _raw_db_url else "?sslmode=require"
     SQLALCHEMY_DATABASE_URI = _raw_db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
